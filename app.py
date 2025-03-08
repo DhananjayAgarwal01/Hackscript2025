@@ -1,32 +1,35 @@
-from flask import Flask, render_template, request, flash, redirect
+from flask import Flask, render_template, request, flash, redirect, jsonify, url_for
 from flask_sqlalchemy import SQLAlchemy
 import numpy as np
-import joblib
-from sklearn.preprocessing import LabelEncoder
-import re
+import pandas as pd
+from datetime import datetime, timedelta
+from joblib import load
+import warnings
+from werkzeug.utils import secure_filename
+import os
+import cv2
+import pytesseract
+from PIL import Image
+import fitz  # PyMuPDF
+import hashlib
+from pathlib import Path
+
+warnings.filterwarnings('ignore')
+
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
 app = Flask(__name__, template_folder='templates')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///SustainaWatt.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///agriprice.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.secret_key = 'SustainaWatt'
+app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this in production
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db = SQLAlchemy(app)
 
-class App1(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    airtemperature = db.Column(db.Float(), nullable=False)
-    pressure = db.Column(db.Float(), nullable=False)
-    windspeed = db.Column(db.Float(), nullable=False)
+# Create upload folder if it doesn't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ********************************** DB User table **********************************
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    firstName = db.Column(db.String(15), nullable=False)
-    lastName = db.Column(db.String(15), nullable=False)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), nullable=False)
-
-# ********************************** DB Contact Us table **********************************
+# ********************************** Database Models **********************************
 class ContactMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -34,146 +37,419 @@ class ContactMessage(db.Model):
     email = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
 
-# ********************************** Creates all DB tables **********************************
-with app.app_context():
-    db.create_all()
-    
+class Document(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    document_type = db.Column(db.String(50), nullable=False)
+    upload_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    hash_value = db.Column(db.String(64), nullable=False)
+    forgery_score = db.Column(db.Float)
+    analysis_result = db.Column(db.Text)
+    metadata = db.Column(db.Text)
 
-name_pattern = re.compile(r'^[a-zA-Z]{1,15}$')
-username_pattern = re.compile(r'^[a-z0-9_.]{6,}$')
-email_pattern = re.compile(r'^[a-zA-Z0-9._%+-]+@(?:gmail|yahoo|outlook)\.com$')
-password_pattern = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$')
+class AnalysisResult(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=False)
+    analysis_type = db.Column(db.String(50), nullable=False)
+    result = db.Column(db.Text, nullable=False)
+    confidence_score = db.Column(db.Float)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+# ********************************** Main Routes **********************************
 @app.route('/')
-
-def index():
-    return render_template('index.html')
-
-# Sign up page
-@app.route('/signup')
-def signup():
-    return render_template('signup.html')
-
-# Forgot password page
-@app.route('/forgotpassword')
-def forgotpassword():
-    return render_template('forgotpassword.html')
-
-# Home page
 @app.route('/home')
 def home():
     return render_template('home.html')
 
-
-@app.route('/app1', methods=['GET','POST'])
-def app1():
-    if request.method == 'POST':
-        air_temperature = float(request.form['airtemperature'])
-        pressure = float(request.form['pressure'])
-        wind_speed = float(request.form['windspeed'])
-
-        new_App1 = App1(airtemperature=air_temperature, pressure=pressure, windspeed=wind_speed)
-
-        db.session.add(new_App1)
-        db.session.commit()
-
-        user_response_app1 = {
-            'AirTemp': air_temperature,
-            'Pressure': pressure,
-            'WindSpeed': wind_speed
-        }
-
-        # Creating a feature vector for the model input
-        label_encoder = LabelEncoder()
-        for column in user_response_app1.keys():
-            user_response_app1[column] = label_encoder.fit_transform([user_response_app1[column]])[0]
-
-        features = [user_response_app1[column] for column in user_response_app1.keys()]
-        user_input = np.array(features).reshape(1, -1)
-
-        # Using the loaded model to predict the screening score
-        loaded_model = joblib.load('static/models/final_power_gen_model.joblib', mmap_mode=None)
-        user_screening_score = loaded_model.predict_proba(user_input)[:, 1]
-
-        # Outputting the screening score
-        print(user_screening_score)
-        flash(f"User Screening Score: {user_screening_score}")
-
-    return render_template('app1.html')
-
-@app.route('/app2')
-def app2():
-    return render_template('app2.html')
-
-@app.route('/signup',  methods=['GET', 'POST']) # Accept both GET and POST requests
-def sign_up():
-    if request.method == 'POST':
-        firstName = request.form['firstname']
-        lastName = request.form['lastname']
-        username = request.form['username']
+@app.route('/contact', methods=['POST'])
+def contact():
+    try:
+        name = request.form['name']
         email = request.form['email']
-        password = request.form['password']
+        phone = request.form['phone']
+        description = request.form['description']
 
-        # Check if the first name and last name meet the criteria
-        if not name_pattern.match(firstName) or not name_pattern.match(lastName):
-            flash('First name and last name must be between 1 and 15 characters long and contain only letters.', 'error')
-            return redirect('/signup')
+        new_message = ContactMessage(
+            name=name,
+            email=email,
+            phone=phone,
+            description=description
+        )
 
-
-        # Check if the email meets the criteria
-        if not email_pattern.match(email):
-            flash('Email must be in a valid format (@gmail.com, @yahoo.com, @outlook.com, etc.)', 'error')
-            return redirect('/signup')
-
-        # Check if the password meets the criteria
-        if not password_pattern.match(password):
-            flash('Password must contain at least 8 characters, 1 capital letter, 1 small letter, and 1 symbol.', 'error')
-            return redirect('/signup')
-
-        # Check if the username or email already exists
-        if User.query.filter_by(username=username).first() is not None:
-            flash('User already exists! Choose a different username.', 'error')
-            return redirect('/signup')
-        elif User.query.filter_by(email=email).first() is not None:
-            flash('Email already exists! Use a different email address.', 'error')
-            return redirect('/signup')
-
-        # If all validation passes, create a new user
-        new_user = User(firstName=firstName, lastName=lastName, username=username, email=email, password=password)
-        db.session.add(new_user)
+        db.session.add(new_message)
         db.session.commit()
 
-        flash('Registration successful. Now, user can sign in.', 'success')
-        return redirect('/signin')
+        flash('Thank you for your message! We will get back to you soon.', 'success')
+        return redirect(url_for('home'))
+    except Exception as e:
+        flash('An error occurred while sending your message. Please try again.', 'error')
+        return redirect(url_for('home'))
 
-    # If it's a GET request, just render the sign_up form
-    return render_template('signup.html')
+# ********************************** Prediction Functions **********************************
+def load_data():
+    try:
+        df = pd.read_csv('static/models/ideathon_dataset.csv')
+        df['date'] = pd.to_datetime(df['date'])
+        return df
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return None
 
+def load_models():
+    models = {}
+    try:
+        for commodity in ['onion', 'potato', 'tomato']:
+            model_path = f'static/models/{commodity}_model.joblib'
+            models[commodity] = load(model_path)
+    except Exception as e:
+        print(f"Error loading models: {e}")
+    return models
 
-@app.route('/signin', methods=['GET', 'POST'])
-def sign_in():
+# Initialize models
+commodity_models = load_models()
+
+# Base prices for wholesale
+pulse_base_prices = {
+    'gram': 60,
+    'tur': 85,
+    'urad': 90,
+    'moong': 95,
+    'masur': 80
+}
+
+# ********************************** Prediction Routes **********************************
+@app.route('/predict_vegetables')
+def predict_vegetables_form():
+    return render_template('predict_vegetables.html')
+
+@app.route('/predict_wholesale')
+def predict_wholesale_form():
+    return render_template('predict_wholesale.html')
+
+@app.route('/predict_vegetables', methods=['POST'])
+def predict_vegetables():
+    try:
+        commodity = request.form['commodity']
+        date_str = request.form['date']
+        market = request.form['market']
+        quantity = float(request.form['quantity'])
+        
+        date = datetime.strptime(date_str, '%Y-%m-%d')
+        
+        df = load_data()
+        if df is None:
+            return jsonify({'error': 'Unable to load historical data'}), 500
+            
+        features = pd.DataFrame({
+    'year': [date.year],
+    'month': [date.month],
+    'week': [date.isocalendar()[1]],
+    f'lag_1_{commodity}': [df[commodity].iloc[-1]],
+    f'rolling_mean_7_{commodity}': [df[commodity].rolling(window=7).mean().iloc[-1]],
+    # Add missing features here (check model.feature_names_in_)
+})
+
+        
+        try:
+            model = load('static/models/final_retailprice_prediction_model.joblib')
+            predicted_price = model.predict(features)[0]
+            confidence = min(95, int(model.feature_importances_.mean() * 100))
+            
+            historical_dates = df.tail(30)['date'].dt.strftime('%Y-%m-%d').tolist()
+            historical_prices = df[commodity].tail(30).tolist()
+            
+            future_dates = [(date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
+            future_features = pd.DataFrame({
+                'year': [(date + timedelta(days=i)).year for i in range(7)],
+                'month': [(date + timedelta(days=i)).month for i in range(7)],
+                'week': [(date + timedelta(days=i)).isocalendar()[1] for i in range(7)],
+                f'lag_1_{commodity}': [df[commodity].iloc[-1]] * 7,
+                f'rolling_mean_7_{commodity}': [df[commodity].rolling(window=7).mean().iloc[-1]] * 7
+            })
+            future_prices = model.predict(future_features).tolist()
+            
+            avg_price = df[commodity].mean()
+            price_trend = 'Increasing' if predicted_price > avg_price else 'Decreasing'
+            volatility = 'High' if abs(predicted_price - avg_price) > avg_price * 0.2 else 'Moderate'
+            
+            market_insights = f"The {commodity} prices are showing a {price_trend.lower()} trend. "
+            market_insights += f"Price volatility is {volatility.lower()}. "
+            
+            total_price = predicted_price * quantity
+            
+            additional_insights = [
+                f"Historical average price: ₹{avg_price:.2f}/kg",
+                f"Current market trend: {price_trend}",
+                f"Price volatility: {volatility}",
+                f"Total price for {quantity}kg: ₹{total_price:.2f}",
+                f"Recommended action: {'Stock up' if price_trend == 'Increasing' else 'Regular purchase'}"
+            ]
+            
+            return render_template('prediction_result.html',
+                                commodity=commodity,
+                                date=date_str,
+                                market=market,
+                                quantity=quantity,
+                                unit='kg',
+                                predicted_price=predicted_price,
+                                total_price=total_price,
+                                confidence=confidence,
+                                dates=historical_dates + future_dates,
+                                historical_prices=historical_prices + future_prices,
+                                predicted_prices=[None] * len(historical_dates) + future_prices,
+                                market_insights=market_insights,
+                                additional_insights=additional_insights)
+                                
+        except Exception as e:
+            return jsonify({'error': f'Error loading model: {str(e)}'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/predict_wholesale', methods=['POST'])
+def predict_wholesale():
+    try:
+        commodity = request.form['commodity']
+        date_str = request.form['date']
+        market = request.form['market']
+        quantity = float(request.form['quantity'])
+        
+        date = datetime.strptime(date_str, '%Y-%m-%d')
+        
+        df = pd.read_csv('static/models/ideathon_wholesale_dataset.csv')  # Load wholesale dataset
+        df['date'] = pd.to_datetime(df['date'])
+        
+        if df is None:
+            return jsonify({'error': 'Unable to load historical data'}), 500
+        
+        features = pd.DataFrame({
+            'year': [date.year],
+            'month': [date.month],
+            'week': [date.isocalendar()[1]],
+            f'lag_1_{commodity}': [df[commodity].iloc[-1]],
+            f'rolling_mean_7_{commodity}': [df[commodity].rolling(window=7).mean().iloc[-1]]
+        })
+        
+        try:
+            model = load(f'static/models/final_wholesaleprice_prediction_model.joblib')
+            predicted_price = model.predict(features)[0]
+            confidence = min(95, int(model.feature_importances_.mean() * 100))
+            
+            historical_dates = df.tail(30)['date'].dt.strftime('%Y-%m-%d').tolist()
+            historical_prices = df[commodity].tail(30).tolist()
+            
+            future_dates = [(date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
+            future_features = pd.DataFrame({
+                'year': [(date + timedelta(days=i)).year for i in range(7)],
+                'month': [(date + timedelta(days=i)).month for i in range(7)],
+                'week': [(date + timedelta(days=i)).isocalendar()[1] for i in range(7)],
+                f'lag_1_{commodity}': [df[commodity].iloc[-1]] * 7,
+                f'rolling_mean_7_{commodity}': [df[commodity].rolling(window=7).mean().iloc[-1]] * 7
+            })
+            future_prices = model.predict(future_features).tolist()
+            
+            avg_price = df[commodity].mean()
+            price_trend = 'Increasing' if predicted_price > avg_price else 'Decreasing'
+            volatility = 'High' if abs(predicted_price - avg_price) > avg_price * 0.2 else 'Moderate'
+            
+            market_insights = f"The {commodity} prices are showing a {price_trend.lower()} trend. "
+            market_insights += f"Price volatility is {volatility.lower()}. "
+            
+            total_price = predicted_price * quantity
+            
+            additional_insights = [
+                f"Historical average price: ₹{avg_price:.2f}/kg",
+                f"Current market trend: {price_trend}",
+                f"Price volatility: {volatility}",
+                f"Total price for {quantity}kg: ₹{total_price:.2f}",
+                f"Recommended action: {'Stock up' if price_trend == 'Increasing' else 'Regular purchase'}"
+            ]
+            
+            return render_template('prediction_result.html',
+                                commodity=commodity,
+                                date=date_str,
+                                market=market,
+                                quantity=quantity,
+                                unit='kg',
+                                predicted_price=predicted_price,
+                                total_price=total_price,
+                                confidence=confidence,
+                                dates=historical_dates + future_dates,
+                                historical_prices=historical_prices + future_prices,
+                                predicted_prices=[None] * len(historical_dates) + future_prices,
+                                market_insights=market_insights,
+                                additional_insights=additional_insights)
+                                
+        except Exception as e:
+            return jsonify({'error': f'Error loading model: {str(e)}'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ********************************** Routes **********************************
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_document():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        if 'document' not in request.files:
+            flash('No file selected', 'error')
+            return redirect(request.url)
+        
+        file = request.files['document']
+        document_type = request.form.get('document_type')
+        
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(request.url)
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            # Calculate file hash
+            file_hash = calculate_file_hash(file_path)
+            
+            # Check if document with same hash exists
+            existing_doc = Document.query.filter_by(hash_value=file_hash).first()
+            if existing_doc:
+                flash('This document has already been analyzed', 'warning')
+                return redirect(url_for('view_result', document_id=existing_doc.id))
+            
+            # Analyze document
+            analysis_results = analyze_document(file_path, document_type)
+            
+            # Save to database
+            new_document = Document(
+                filename=filename,
+                document_type=document_type,
+                hash_value=file_hash,
+                forgery_score=analysis_results['forgery_probability'],
+                analysis_result=str(analysis_results),
+                metadata=str(analysis_results.get('metadata_analysis', {}))
+            )
+            db.session.add(new_document)
+            db.session.commit()
+            
+            # Save detailed analysis results
+            for analysis_type, result in analysis_results.items():
+                if isinstance(result, dict):
+                    analysis_entry = AnalysisResult(
+                        document_id=new_document.id,
+                        analysis_type=analysis_type,
+                        result=str(result),
+                        confidence_score=0.9  # Default confidence score
+                    )
+                    db.session.add(analysis_entry)
+            
+            db.session.commit()
+            
+            return redirect(url_for('view_result', document_id=new_document.id))
+        
+        flash('Invalid file type', 'error')
+        return redirect(request.url)
+    
+    return render_template('upload.html')
 
-        # Find user by username
-        user = User.query.filter_by(username=username).first()
+@app.route('/result/<int:document_id>')
+def view_result(document_id):
+    document = Document.query.get_or_404(document_id)
+    analysis_results = AnalysisResult.query.filter_by(document_id=document_id).all()
+    
+    return render_template('result.html', 
+                         document=document,
+                         analysis_results=analysis_results)
 
-        if user:
-            # Check if the password matches
-            if user.password == password:
-                flash('sign_in successful!', 'success')
-                return redirect('/home')
-            else:
-                flash('Incorrect password. Please try again.', 'error')
-                return redirect('/signin')  # Redirect after flashing error message
-        else:
-            flash('User not found. Please sign up first.', 'error')
-            return redirect('/signup')
+@app.route('/history')
+def view_history():
+    documents = Document.query.order_by(Document.upload_date.desc()).all()
+    return render_template('history.html', documents=documents)
 
-    return render_template('signin.html')
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def calculate_file_hash(file_path):
+    """Calculate SHA-256 hash of a file"""
+    sha256_hash = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+def analyze_document(file_path, document_type):
+    """Analyze document for potential forgery"""
+    results = {
+        'content_analysis': {},
+        'structural_analysis': {},
+        'metadata_analysis': {},
+        'forgery_probability': 0.0
+    }
+    
+    # Extract text using OCR for images or PDF text extraction
+    if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+        img = cv2.imread(file_path)
+        text = pytesseract.image_to_string(img)
+    else:  # PDF
+        doc = fitz.open(file_path)
+        text = ""
+        for page in doc:
+            text += page.get_text()
+    
+    # Basic content analysis
+    results['content_analysis']['text_length'] = len(text)
+    results['content_analysis']['has_suspicious_patterns'] = False
+    
+    # Structural analysis for images
+    if file_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+        img = cv2.imread(file_path)
+        # Error Level Analysis
+        ela_score = perform_ela(file_path)
+        results['structural_analysis']['ela_score'] = ela_score
+    
+    # Metadata analysis
+    if file_path.lower().endswith('.pdf'):
+        doc = fitz.open(file_path)
+        metadata = doc.metadata
+        results['metadata_analysis'] = metadata
+    
+    # Calculate overall forgery probability
+    forgery_indicators = []
+    if results['content_analysis'].get('has_suspicious_patterns', False):
+        forgery_indicators.append(0.3)
+    if results.get('structural_analysis', {}).get('ela_score', 0) > 50:
+        forgery_indicators.append(0.4)
+    
+    results['forgery_probability'] = sum(forgery_indicators) if forgery_indicators else 0.1
+    
+    return results
+
+def perform_ela(image_path):
+    """Perform Error Level Analysis on image"""
+    QUALITY = 90
+    temp_path = "temp_ela.jpg"
+    
+    original = Image.open(image_path)
+    original.save(temp_path, 'JPEG', quality=QUALITY)
+    temporary = Image.open(temp_path)
+    
+    diff = Image.open(image_path).convert("L") - Image.open(temp_path).convert("L")
+    diff = diff.point(lambda p: 255 if p > 0 else 0, '1')
+    diff = diff.convert("RGB")
+    
+    # Calculate the average difference
+    sum_diff = 0
+    for x in range(diff.width):
+        for y in range(diff.height):
+            r, g, b = diff.getpixel((x, y))
+            sum_diff += (r + g + b) / 3
+    
+    os.remove(temp_path)
+    return (sum_diff / (diff.width * diff.height)) * 100
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

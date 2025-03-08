@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Analysis History</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0">Document Analysis History</h2>
+                <a href="{{ url_for('upload_document') }}" class="btn btn-primary">
+                    <i class="fas fa-upload me-2"></i>New Analysis
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Document Type</th>
+                                    <th>File Name</th>
+                                    <th>Upload Date</th>
+                                    <th>Risk Score</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doc in documents %}
+                                <tr>
+                                    <td>
+                                        <i class="fas fa-file me-2 text-primary"></i>
+                                        {{ doc.document_type|replace('_', ' ')|title }}
+                                    </td>
+                                    <td>{{ doc.filename }}</td>
+                                    <td>{{ doc.upload_date.strftime('%B %d, %Y %H:%M') }}</td>
+                                    <td>
+                                        {% set score = doc.forgery_score * 100 %}
+                                        {% set risk_color = 'success' if score < 30 else 'warning' if score < 70 else 'danger' %}
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress flex-grow-1 me-2" style="height: 8px;">
+                                                <div class="progress-bar bg-{{ risk_color }}" 
+                                                     role="progressbar" 
+                                                     style="width: {{ score }}%"></div>
+                                            </div>
+                                            <span class="text-{{ risk_color }} small">{{ "%.1f"|format(score) }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if score < 30 %}
+                                            <span class="badge bg-success">Authentic</span>
+                                        {% elif score < 70 %}
+                                            <span class="badge bg-warning">Suspicious</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">High Risk</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('view_result', document_id=doc.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-search me-1"></i>View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                            <h5>No Documents Analyzed Yet</h5>
+                                            <p class="mb-0">Upload a document to start analyzing</p>
+                                            <a href="{{ url_for('upload_document') }}" class="btn btn-primary mt-3">
+                                                <i class="fas fa-upload me-2"></i>Upload Document
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .progress {
+        background-color: rgba(0,0,0,0.05);
+    }
+    
+    .table > :not(caption) > * > * {
+        padding: 1rem;
+    }
+    
+    .badge {
+        padding: 0.5em 0.8em;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.7rem;
+    }
+</style>
+{% endblock %}
+{% endblock %} 

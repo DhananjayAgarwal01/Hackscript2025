@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Upload Document for Analysis</h2>
+                    
+                    <form action="{{ url_for('upload_document') }}" method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <label for="document_type" class="form-label">Document Type</label>
+                            <select class="form-select" id="document_type" name="document_type" required>
+                                <option value="">Select document type...</option>
+                                <option value="bank_statement">Bank Statement</option>
+                                <option value="itr">Income Tax Return (ITR)</option>
+                                <option value="agreement">Textual Agreement</option>
+                                <option value="aadhar">Aadhaar Card</option>
+                                <option value="pan">PAN Card</option>
+                                <option value="other">Other Government ID</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                Please select a document type.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="document" class="form-label">Upload Document</label>
+                            <div class="upload-area p-4 text-center border rounded">
+                                <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                                <p class="mb-2">Drag and drop your file here or click to browse</p>
+                                <p class="text-muted small">Supported formats: PDF, PNG, JPG, JPEG</p>
+                                <input type="file" class="form-control" id="document" name="document" accept=".pdf,.png,.jpg,.jpeg" required style="display: none;">
+                                <button type="button" class="btn btn-outline-primary mt-2" onclick="document.getElementById('document').click()">
+                                    <i class="fas fa-folder-open me-2"></i>Browse Files
+                                </button>
+                            </div>
+                            <div id="selected-file" class="mt-2 text-muted small"></div>
+                            <div class="invalid-feedback">
+                                Please choose a document to upload.
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info" role="alert">
+                            <h5 class="alert-heading"><i class="fas fa-info-circle me-2"></i>Important Notes:</h5>
+                            <ul class="mb-0">
+                                <li>Maximum file size: 10MB</li>
+                                <li>Ensure document is clearly visible and all text is readable</li>
+                                <li>Remove any sensitive information before uploading</li>
+                                <li>Files are securely processed and automatically deleted after analysis</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-shield-alt me-2"></i>Analyze Document
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .upload-area {
+        border: 2px dashed var(--secondary-color) !important;
+        background-color: rgba(52, 152, 219, 0.05);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .upload-area:hover {
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .upload-area.dragover {
+        background-color: rgba(52, 152, 219, 0.2);
+        border-color: var(--primary-color) !important;
+    }
+    
+    .alert ul {
+        padding-left: 1.2rem;
+    }
+    
+    .alert ul li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .alert ul li:last-child {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+    
+    // File upload handling
+    const uploadArea = document.querySelector('.upload-area');
+    const fileInput = document.getElementById('document');
+    const selectedFile = document.getElementById('selected-file');
+    
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight(e) {
+        uploadArea.classList.add('dragover');
+    }
+    
+    function unhighlight(e) {
+        uploadArea.classList.remove('dragover');
+    }
+    
+    uploadArea.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        updateFileName();
+    }
+    
+    fileInput.addEventListener('change', updateFileName);
+    
+    function updateFileName() {
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            selectedFile.textContent = `Selected file: ${file.name} (${formatFileSize(file.size)})`;
+        } else {
+            selectedFile.textContent = '';
+        }
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+</script>
+{% endblock %}
+{% endblock %} 
