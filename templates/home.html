@@ -18,15 +18,9 @@
     }
 
     .hero-section {
-        background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('/static/images/hero-bg.jpg');
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        color: white;
-        padding: 150px 0;
-        position: relative;
-        overflow: hidden;
-        margin-top: -76px;
+        background: linear-gradient(135deg, rgba(78,84,200,0.1), rgba(143,148,251,0.1));
+        border-radius: 20px;
+        padding: 4rem 2rem;
     }
 
     .hero-section::before {
@@ -82,11 +76,11 @@
     }
 
     .feature-icon {
-        font-size: 3rem;
-        background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 1.5rem;
+        background-color: rgba(78,84,200,0.1);
+        padding: 1rem;
+        border-radius: 50%;
+        display: inline-block;
+        margin-bottom: 1rem;
     }
 
     .team-member {
@@ -274,123 +268,128 @@
         left: 0;
         color: var(--secondary-color);
     }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin: 0 auto;
+    }
+
+    .step {
+        padding: 2rem;
+        background-color: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .step:hover {
+        transform: translateY(-5px);
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            padding: 2rem 1rem;
+        }
+        
+        .step {
+            margin-bottom: 1rem;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<div class="py-5 text-center">
-    <h1 class="display-4 fw-bold">Document Forgery Detection System</h1>
-    <p class="lead text-muted">Advanced AI-powered system to detect document forgery and ensure authenticity</p>
-    <div class="d-flex justify-content-center gap-3 mt-4">
-        <a href="/upload" class="btn btn-primary btn-lg">
-            <i class="fas fa-upload me-2"></i>Upload Document
-        </a>
-        <a href="/about" class="btn btn-outline-secondary btn-lg">
-            <i class="fas fa-info-circle me-2"></i>Learn More
-        </a>
-    </div>
+<div class="hero-section text-center py-5 mb-5">
+    <h1 class="display-4 mb-4">Document Verification System</h1>
+    <p class="lead mb-4">Advanced document verification using AI and machine learning technology</p>
+    <a href="{{ url_for('upload_document') }}" class="btn btn-primary btn-lg">Get Started</a>
 </div>
 
-<!-- Features Section -->
-<div class="row g-4 py-5">
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <div class="text-center mb-3">
-                    <i class="fas fa-file-upload fa-3x text-primary"></i>
+<div class="features-section py-5">
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="var(--primary-color)" class="bi bi-shield-check" viewBox="0 0 16 16">
+                            <path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/>
+                            <path d="M10.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Advanced Security</h3>
+                    <p class="card-text">State-of-the-art document verification using advanced machine learning algorithms</p>
                 </div>
-                <h5 class="card-title text-center">Multiple Document Types</h5>
-                <p class="card-text">
-                    Support for various document formats including:
-                    <ul>
-                        <li>Bank Statements</li>
-                        <li>ITR Documents</li>
-                        <li>Government IDs (Aadhaar, PAN)</li>
-                        <li>Textual Agreements</li>
-                    </ul>
-                </p>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <div class="text-center mb-3">
-                    <i class="fas fa-shield-alt fa-3x text-primary"></i>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="var(--primary-color)" class="bi bi-lightning-charge" viewBox="0 0 16 16">
+                            <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09zM4.157 8.5H7a.5.5 0 0 1 .478.647L6.11 13.59l5.732-6.09H9a.5.5 0 0 1-.478-.647L9.89 2.41 4.157 8.5z"/>
+                        </svg>
+                    </div>
+                    <h3 class="card-title h4 mb-3">Real-time Analysis</h3>
+                    <p class="card-text">Get instant results with our powerful document analysis engine</p>
                 </div>
-                <h5 class="card-title text-center">Advanced Analysis</h5>
-                <p class="card-text">
-                    Comprehensive document verification:
-                    <ul>
-                        <li>Content Consistency Check</li>
-                        <li>Structural Analysis</li>
-                        <li>Metadata Verification</li>
-                        <li>Digital Signature Validation</li>
-                    </ul>
-                </p>
             </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <div class="text-center mb-3">
-                    <i class="fas fa-brain fa-3x text-primary"></i>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="var(--primary-color)" class="bi bi-clock-history" viewBox="0 0 16 16">
+                            <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.724-.69c.27.285.52.59.747.91l-.818.576zm.744 1.352a7.08 7.08 0 0 0-.214-.468l.893-.45a7.976 7.976 0 0 1 .45 1.088l-.95.313a7.023 7.023 0 0 0-.179-.483zm.53 2.507a6.991 6.991 0 0 0-.1-1.025l.985-.17c.067.386.106.778.116 1.17l-1 .025zm-.131 1.538c.033-.17.06-.339.081-.51l.993.123a7.957 7.957 0 0 1-.23 1.155l-.964-.267c.046-.165.086-.332.12-.501zm-.952 2.379c.184-.29.346-.594.486-.908l.914.405c-.16.36-.345.706-.555 1.038l-.845-.535zm-.964 1.205c.122-.122.239-.248.35-.378l.758.653a8.073 8.073 0 0 1-.401.432l-.707-.707z"/>
+                            <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0v1z"/>
+                            <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5z"/>
+                        </svg>
+                    </div>
+                    <h3 class="card-title h4 mb-3">History Tracking</h3>
+                    <p class="card-text">Keep track of all your document verifications with detailed history</p>
                 </div>
-                <h5 class="card-title text-center">AI-Powered Detection</h5>
-                <p class="card-text">
-                    State-of-the-art forgery detection:
-                    <ul>
-                        <li>Machine Learning Analysis</li>
-                        <li>OCR Processing</li>
-                        <li>Image Processing</li>
-                        <li>Pattern Recognition</li>
-                    </ul>
-                </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Process Section -->
-<div class="py-5">
+<div class="how-it-works py-5">
     <h2 class="text-center mb-5">How It Works</h2>
     <div class="row g-4">
         <div class="col-md-3">
-            <div class="text-center">
-                <div class="circle-icon mb-3">
-                    <i class="fas fa-upload"></i>
-                </div>
-                <h5>1. Upload</h5>
-                <p>Upload your document for verification</p>
+            <div class="step text-center">
+                <div class="step-number mb-3">1</div>
+                <h4>Upload Document</h4>
+                <p>Upload your document in PDF, PNG, or JPG format</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="text-center">
-                <div class="circle-icon mb-3">
-                    <i class="fas fa-cogs"></i>
-                </div>
-                <h5>2. Process</h5>
-                <p>Advanced AI analysis begins</p>
+            <div class="step text-center">
+                <div class="step-number mb-3">2</div>
+                <h4>Analysis</h4>
+                <p>Our AI analyzes the document for authenticity</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="text-center">
-                <div class="circle-icon mb-3">
-                    <i class="fas fa-search"></i>
-                </div>
-                <h5>3. Analyze</h5>
-                <p>Multi-layer forgery detection</p>
+            <div class="step text-center">
+                <div class="step-number mb-3">3</div>
+                <h4>Verification</h4>
+                <p>Advanced algorithms verify document integrity</p>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="text-center">
-                <div class="circle-icon mb-3">
-                    <i class="fas fa-check-circle"></i>
-                </div>
-                <h5>4. Results</h5>
-                <p>Detailed verification report</p>
+            <div class="step text-center">
+                <div class="step-number mb-3">4</div>
+                <h4>Results</h4>
+                <p>Get detailed results and analysis report</p>
             </div>
         </div>
     </div>
