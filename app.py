@@ -10,14 +10,47 @@ import os
 import cv2
 import pytesseract
 from PIL import Image
-import fitz  # PyMuPDF
+import PyPDF2  # Replace fitz with PyPDF2
 import hashlib
 from pathlib import Path
+import re
+import json
+import sys
+import platform
 
 warnings.filterwarnings('ignore')
 
+def initialize_tesseract():
+    """Initialize Tesseract with proper path detection"""
+    possible_paths = [
+        r'C:\Program Files\Tesseract-OCR\tesseract.exe',
+        r'C:\Program Files (x86)\Tesseract-OCR\tesseract.exe',
+        r'C:\Users\dhana\AppData\Local\Programs\Tesseract-OCR\tesseract.exe',
+        # Add your actual installation path here if different
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            pytesseract.pytesseract.tesseract_cmd = path
+            print(f"Found Tesseract at: {path}")
+            return True
+    
+    raise RuntimeError(
+        "Tesseract not found. Please install it from: "
+        "https://github.com/UB-Mannheim/tesseract/wiki"
+    )
+
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
+PAN_PATTERN = re.compile(r'^[A-Z]{5}[0-9]{4}[A-Z]$')
+PAN_ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'pdf'}
+
+PAN_ZONES = {
+    'name': (50, 100, 400, 150),  # Example coordinates (x1, y1, x2, y2)
+    'pan_number': (50, 200, 400, 250),
+    'dob': (50, 150, 400, 200),
+    'signature': (50, 300, 400, 350)
+}
 
 app = Flask(__name__, template_folder='templates')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///documents.db'
@@ -26,8 +59,23 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'  # Change this in production
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 db = SQLAlchemy(app)
 
+# Add after app initialization and before database models
+@app.template_filter('from_json')
+def from_json(value):
+    try:
+        if isinstance(value, str):
+            return json.loads(value)
+        return value
+    except (json.JSONDecodeError, TypeError):
+        return {}
+
 # Create upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+try:
+    initialize_tesseract()
+except RuntimeError as e:
+    print(f"Warning: {str(e)}")
 
 # ********************************** Database Models **********************************
 class ContactMessage(db.Model):
@@ -54,6 +102,20 @@ class AnalysisResult(db.Model):
     result = db.Column(db.Text, nullable=False)
     confidence_score = db.Column(db.Float)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+class PanVerification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pan_number = db.Column(db.String(10), nullable=False)
+    upload_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    verification_status = db.Column(db.String(20), nullable=False)
+    confidence_score = db.Column(db.Float)
+    extracted_text = db.Column(db.Text)
+    filename = db.Column(db.String(255))
+    extracted_name = db.Column(db.String(100))
+    extracted_dob = db.Column(db.String(20))
+    face_detected = db.Column(db.Boolean, default=False)
+    signature_detected = db.Column(db.Boolean, default=False)
+    manipulated_score = db.Column(db.Float, default=0.0)
 
 # ********************************** Main Routes **********************************
 @app.route('/')
@@ -324,8 +386,8 @@ def upload_document():
                 document_type=document_type,
                 hash_value=file_hash,
                 forgery_score=analysis_results['forgery_probability'],
-                analysis_result=str(analysis_results),
-                metadata=str(analysis_results.get('metadata_analysis', {}))
+                analysis_result=json.dumps(analysis_results),  # Convert to JSON string
+                metadata=json.dumps(analysis_results.get('metadata_analysis', {}))
             )
             db.session.add(new_document)
             db.session.commit()
@@ -336,7 +398,7 @@ def upload_document():
                     analysis_entry = AnalysisResult(
                         document_id=new_document.id,
                         analysis_type=analysis_type,
-                        result=str(result),
+                        result=json.dumps(result),  # Convert to JSON string
                         confidence_score=0.9  # Default confidence score
                     )
                     db.session.add(analysis_entry)
@@ -368,6 +430,81 @@ def view_history():
 def about():
     return render_template('about.html')
 
+@app.route('/verify-pan', methods=['GET'])
+def verify_pan_form():
+    return render_template('verify_pan.html')
+
+@app.route('/verify-pan', methods=['POST'])
+def verify_pan():
+    try:
+        if 'pan_file' not in request.files:
+            flash('No file uploaded', 'error')
+            return redirect(request.url)
+
+        file = request.files['pan_file']
+        pan_number = request.form.get('pan_number', '').strip().upper()
+
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(request.url)
+
+        if not is_valid_pan(pan_number):
+            flash('Invalid PAN number format', 'error')
+            return redirect(request.url)
+
+        if file and file.filename.lower().endswith(tuple(PAN_ALLOWED_EXTENSIONS)):
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+
+            # Extract all details
+            result = extract_pan_details(file_path)
+            
+            # Verify PAN number
+            verification_status = 'VERIFIED' if result.get('pan_number') == pan_number else 'FAILED'
+            
+            # Advanced verification checks
+            if verification_status == 'VERIFIED':
+                if result.get('manipulated_score', 0) > 0.7:
+                    verification_status = 'SUSPICIOUS'
+                elif not result.get('face_detected'):
+                    verification_status = 'INCOMPLETE'
+
+            # Save verification result
+            verification = PanVerification(
+                pan_number=pan_number,
+                verification_status=verification_status,
+                confidence_score=result.get('confidence', 0.0),
+                extracted_text=result.get('full_text', ''),
+                filename=filename,
+                extracted_name=result.get('extracted_name', ''),
+                extracted_dob=result.get('extracted_dob', ''),
+                face_detected=result.get('face_detected', False),
+                signature_detected=result.get('extracted_signature', False) != '',
+                manipulated_score=result.get('manipulated_score', 0.0)
+            )
+            db.session.add(verification)
+            db.session.commit()
+
+            # Clean up
+            os.remove(file_path)
+
+            return render_template('pan_result.html',
+                                verification=verification,
+                                result=result)
+        
+        flash('Invalid file type', 'error')
+        return redirect(request.url)
+
+    except Exception as e:
+        flash(f'Error during verification: {str(e)}', 'error')
+        return redirect(request.url)
+
+@app.route('/pan-history')
+def pan_verification_history():
+    verifications = PanVerification.query.order_by(PanVerification.upload_date.desc()).all()
+    return render_template('pan_history.html', verifications=verifications)
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -393,10 +530,26 @@ def analyze_document(file_path, document_type):
         img = cv2.imread(file_path)
         text = pytesseract.image_to_string(img)
     else:  # PDF
-        doc = fitz.open(file_path)
-        text = ""
-        for page in doc:
-            text += page.get_text()
+        try:
+            with open(file_path, 'rb') as pdf_file:
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                text = ""
+                for page in pdf_reader.pages:
+                    text += page.extract_text()
+                
+                # Get PDF metadata
+                metadata = pdf_reader.metadata
+                if metadata:
+                    results['metadata_analysis'] = {
+                        'author': metadata.get('/Author', ''),
+                        'creator': metadata.get('/Creator', ''),
+                        'producer': metadata.get('/Producer', ''),
+                        'creation_date': metadata.get('/CreationDate', ''),
+                        'modification_date': metadata.get('/ModDate', '')
+                    }
+        except Exception as e:
+            print(f"PDF processing error: {str(e)}")
+            text = ""
     
     # Basic content analysis
     results['content_analysis']['text_length'] = len(text)
@@ -408,12 +561,6 @@ def analyze_document(file_path, document_type):
         # Error Level Analysis
         ela_score = perform_ela(file_path)
         results['structural_analysis']['ela_score'] = ela_score
-    
-    # Metadata analysis
-    if file_path.lower().endswith('.pdf'):
-        doc = fitz.open(file_path)
-        metadata = doc.metadata
-        results['metadata_analysis'] = metadata
     
     # Calculate overall forgery probability
     forgery_indicators = []
@@ -428,26 +575,224 @@ def analyze_document(file_path, document_type):
 
 def perform_ela(image_path):
     """Perform Error Level Analysis on image"""
-    QUALITY = 90
-    temp_path = "temp_ela.jpg"
-    
-    original = Image.open(image_path)
-    original.save(temp_path, 'JPEG', quality=QUALITY)
-    temporary = Image.open(temp_path)
-    
-    diff = Image.open(image_path).convert("L") - Image.open(temp_path).convert("L")
-    diff = diff.point(lambda p: 255 if p > 0 else 0, '1')
-    diff = diff.convert("RGB")
-    
-    # Calculate the average difference
-    sum_diff = 0
-    for x in range(diff.width):
-        for y in range(diff.height):
-            r, g, b = diff.getpixel((x, y))
-            sum_diff += (r + g + b) / 3
-    
-    os.remove(temp_path)
-    return (sum_diff / (diff.width * diff.height)) * 100
+    try:
+        QUALITY = 90
+        temp_path = os.path.join(app.config['UPLOAD_FOLDER'], "temp_ela.jpg")
+        
+        # Read original image
+        original = Image.open(image_path)
+        # Save with specific quality
+        original.save(temp_path, 'JPEG', quality=QUALITY)
+        
+        # Read both images as numpy arrays
+        original_array = np.array(Image.open(image_path).convert('L'))
+        resaved_array = np.array(Image.open(temp_path).convert('L'))
+        
+        # Calculate difference and amplify
+        diff = np.absolute(original_array - resaved_array)
+        diff = diff * 255.0 / diff.max()  # Normalize to 0-255 range
+        
+        # Calculate ELA score (mean difference)
+        ela_score = np.mean(diff)
+        
+        # Clean up
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+            
+        return ela_score
+        
+    except Exception as e:
+        print(f"ELA Analysis Error: {str(e)}", file=sys.stderr)
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return 0.0
+
+def is_valid_pan(pan_number):
+    """Check if PAN number matches the required pattern"""
+    return bool(PAN_PATTERN.match(pan_number))
+
+def enhance_image_for_ocr(image):
+    """Apply advanced image preprocessing for better OCR"""
+    try:
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply adaptive thresholding
+        thresh = cv2.adaptiveThreshold(
+            gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 11, 2
+        )
+        
+        # Noise removal
+        denoised = cv2.fastNlMeansDenoising(thresh)
+        
+        # Deskewing
+        coords = np.column_stack(np.where(denoised > 0))
+        angle = cv2.minAreaRect(coords)[-1]
+        if angle < -45:
+            angle = 90 + angle
+        (h, w) = image.shape[:2]
+        center = (w // 2, h // 2)
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated = cv2.warpAffine(
+            denoised, M, (w, h),
+            flags=cv2.INTER_CUBIC,
+            borderMode=cv2.BORDER_REPLICATE
+        )
+        
+        return rotated
+    except Exception as e:
+        print(f"Image enhancement error: {str(e)}")
+        return image
+
+def extract_pan_details(image_path):
+    """Extract all relevant details from PAN card"""
+    try:
+        # Read image
+        image = cv2.imread(image_path)
+        if image is None:
+            raise RuntimeError("Failed to load image")
+            
+        # Enhance image
+        processed = enhance_image_for_ocr(image)
+        results = {'confidence': 0.0}
+        
+        # Extract text from specific zones
+        for zone_name, (x1, y1, x2, y2) in PAN_ZONES.items():
+            zone_image = processed[y1:y2, x1:x2]
+            text = pytesseract.image_to_string(
+                zone_image,
+                config='--oem 3 --psm 6'
+            ).strip()
+            results[f'extracted_{zone_name}'] = text
+            
+        # Look for PAN pattern
+        full_text = pytesseract.image_to_string(processed)
+        pan_matches = PAN_PATTERN.findall(full_text)
+        results['pan_number'] = pan_matches[0] if pan_matches else None
+        
+        # Detect face using Haar cascade
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+        )
+        faces = face_cascade.detectMultiScale(processed, 1.1, 4)
+        results['face_detected'] = len(faces) > 0
+        
+        # Calculate confidence score based on multiple factors
+        confidence_factors = [
+            1.0 if results['pan_number'] else 0.0,
+            0.3 if results['face_detected'] else 0.0,
+            0.2 if results.get('extracted_signature') else 0.0,
+            0.2 if results.get('extracted_name') else 0.0,
+            0.3 if results.get('extracted_dob') else 0.0
+        ]
+        results['confidence'] = sum(confidence_factors) / len(confidence_factors)
+        
+        # Detect potential manipulation
+        ela_score = perform_ela(image_path)
+        results['manipulated_score'] = ela_score / 100.0
+        
+        return results
+        
+    except Exception as e:
+        print(f"Error extracting PAN details: {str(e)}")
+        return {'error': str(e), 'confidence': 0.0}
+
+def extract_pan_from_image(image_path):
+    """Extract text from PAN card image using OCR"""
+    try:
+        # Verify tesseract installation
+        if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
+            raise RuntimeError(
+                f"Tesseract not found at: {pytesseract.pytesseract.tesseract_cmd}\n"
+                "Please verify installation and update the path in the code."
+            )
+            
+        # Read and preprocess image
+        image = cv2.imread(image_path)
+        if image is None:
+            raise RuntimeError(f"Failed to load image: {image_path}")
+            
+        # Image preprocessing
+        # Resize if too small
+        scale_percent = 200
+        width = int(image.shape[1] * scale_percent / 100)
+        height = int(image.shape[0] * scale_percent / 100)
+        image = cv2.resize(image, (width, height), interpolation=cv2.INTER_CUBIC)
+        
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Apply thresholding to preprocess the image
+        gray = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+        
+        # Apply dilation to connect text components
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+        gray = cv2.dilate(gray, kernel, iterations=1)
+        
+        # Write the grayscale image to disk as temporary file
+        temp_file = os.path.join(app.config['UPLOAD_FOLDER'], "temp_ocr.png")
+        cv2.imwrite(temp_file, gray)
+        
+        try:
+            # Perform OCR
+            text = pytesseract.image_to_string(
+                Image.open(temp_file),
+                config='--oem 3 --psm 6'
+            )
+            
+            # Clean up temporary file
+            os.remove(temp_file)
+            
+            # Look for PAN pattern in extracted text
+            pan_matches = PAN_PATTERN.findall(text)
+            print(f"Extracted text: {text}")
+            print(f"Found PAN matches: {pan_matches}")
+            
+            return {
+                'success': True,
+                'text': text,
+                'pan_number': pan_matches[0] if pan_matches else None,
+                'confidence': 0.85 if pan_matches else 0.0
+            }
+            
+        except Exception as ocr_error:
+            raise RuntimeError(f"OCR failed: {str(ocr_error)}")
+            
+    except Exception as e:
+        print(f"Error in extract_pan_from_image: {str(e)}", file=sys.stderr)
+        return {
+            'success': False,
+            'error': str(e),
+            'text': None,
+            'pan_number': None,
+            'confidence': 0.0
+        }
+
+def extract_pan_from_pdf(pdf_path):
+    """Extract text from PAN card PDF"""
+    try:
+        with open(pdf_path, 'rb') as pdf_file:
+            pdf_reader = PyPDF2.PdfReader(pdf_file)
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text()
+            
+            pan_matches = PAN_PATTERN.findall(text)
+            return {
+                'success': True,
+                'text': text,
+                'pan_number': pan_matches[0] if pan_matches else None,
+                'confidence': 0.85 if pan_matches else 0.0
+            }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e),
+            'text': None,
+            'pan_number': None,
+            'confidence': 0.0
+        }
 
 if __name__ == "__main__":
     with app.app_context():

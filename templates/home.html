@@ -7,11 +7,13 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 <style>
-    :root {
-        --primary-color: #28a745;
-        --secondary-color: #20c997;
-        --dark-color: #343a40;
-    }
+        :root {
+            --primary-color: #4e54c8;
+            --secondary-color: #8f94fb;
+            --accent-color: #ff6b6b;
+            --background-color: #f8f9fa;
+            --dark-color: #343a40;
+        }
 
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -261,9 +263,7 @@
     }
     
     ul li:before {
-        content: "\f00c";
-        font-family: "Font Awesome 5 Free";
-        font-weight: 900;
+        font-family: Arial;
         position: absolute;
         left: 0;
         color: var(--secondary-color);
@@ -309,7 +309,7 @@
 
 {% block content %}
 <div class="hero-section text-center py-5 mb-5">
-    <h1 class="display-4 mb-4">Document Verification System</h1>
+    <h1 class="display-4 mb-4">Document Forgery Detection System</h1>
     <p class="lead mb-4">Advanced document verification using AI and machine learning technology</p>
     <a href="{{ url_for('upload_document') }}" class="btn btn-primary btn-lg">Get Started</a>
 </div>
@@ -368,7 +368,7 @@
             <div class="step text-center">
                 <div class="step-number mb-3">1</div>
                 <h4>Upload Document</h4>
-                <p>Upload your document in PDF, PNG, or JPG format</p>
+                <p>Upload your document in various formats</p>
             </div>
         </div>
         <div class="col-md-3">

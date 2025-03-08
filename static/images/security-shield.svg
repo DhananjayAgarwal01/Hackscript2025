@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <style>
+        .primary { fill: #1a365d; }
+        .secondary { fill: #2c5282; }
+    </style>
+    <path class="secondary" d="M256 32l224 96v128c0 123.7-90.5 224-224 224S32 379.7 32 256V128l224-96z"/>
+    <path class="primary" d="M256 480c-97.2 0-176-78.8-176-176V160l176-75 176 75v144c0 97.2-78.8 176-176 176zm64-272l-80 80-48-48-32 32 80 80 112-112-32-32z"/>
+</svg>

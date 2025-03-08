@@ -1,33 +1,218 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="page-header text-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold mb-3">About Our Platform</h1>
+        <p class="lead text-white-50">Advanced Document Verification Using AI Technology</p>
+    </div>
+</div>
 
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <h1 class="mb-4">About Our Document Management System</h1>
-                <p class="lead">
-                    Our Document Management System (DMS) is a powerful tool designed to help you organize, 
-                    store, and manage your documents efficiently.
-                </p>
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h3>Key Features</h3>
-                        <ul>
-                            <li>Secure document storage</li>
-                            <li>Easy document upload and retrieval</li>
-                            <li>Advanced search capabilities</li>
-                            <li>Document version control</li>
-                            <li>User-friendly interface</li>
-                        </ul>
-                    </div>
+<div class="container py-5">
+    <!-- Mission Section -->
+    <div class="row mb-5">
+        <div class="col-lg-6">
+            <h2 class="section-title">Our Mission</h2>
+            <p class="lead text-primary mb-4">Ensuring Document Authenticity in the Digital Age</p>
+            <p>We are committed to providing cutting-edge document verification solutions that help organizations and individuals 
+            verify the authenticity of important documents. Our AI-powered platform combines advanced machine learning algorithms 
+            with state-of-the-art image processing to detect various types of document forgery.</p>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="h4 mb-4">Why Choose Us?</h3>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            99.9% Accuracy in Forgery Detection
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            Real-time Processing & Results
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            Secure & Confidential Document Handling
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check-circle text-primary me-2"></i>
+                            24/7 Technical Support
+                        </li>
+                    </ul>
                 </div>
-                <p>
-                    Built with modern technologies and security in mind, our DMS ensures your documents 
-                    are safely stored and easily accessible when you need them.
-                </p>
             </div>
         </div>
     </div>
 
+    <!-- Technology Section -->
+    <div class="row mb-5">
+        <h2 class="section-title text-center mb-4">Our Technology</h2>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="tech-icon mb-4">
+                        <img src="{{ url_for('static', filename='images/ai-brain.svg') }}" alt="AI & ML" class="img-fluid" width="120">
+                    </div>
+                    <h3 class="h5 mb-3">AI & Machine Learning</h3>
+                    <p>Advanced algorithms trained on millions of documents to detect even the most subtle signs of forgery.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="tech-icon mb-4">
+                        <img src="{{ url_for('static', filename='images/pattern-recognition.svg') }}" alt="Pattern Recognition" class="img-fluid" width="120">
+                    </div>
+                    <h3 class="h5 mb-3">Pattern Recognition</h3>
+                    <p>Sophisticated pattern matching technology to identify inconsistencies and alterations in documents.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center p-4">
+                    <div class="tech-icon mb-4">
+                        <img src="{{ url_for('static', filename='images/security-shield.svg') }}" alt="Security Protocols" class="img-fluid" width="120">
+                    </div>
+                    <h3 class="h5 mb-3">Security Protocols</h3>
+                    <p>Enterprise-grade security measures ensuring your documents are protected throughout the verification process.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="row mb-5">
+        <h2 class="section-title text-center mb-4">Key Features</h2>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-4">Document Analysis</h3>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Content Consistency Verification
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Digital Signature Authentication
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Metadata Analysis
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Font & Typography Verification
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-4">Security Features</h3>
+                    <ul class="list-unstyled">
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            End-to-End Encryption
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Secure File Storage
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Automated Data Cleanup
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Access Control & Logging
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="bg-light rounded-4 p-5 mb-5">
+        <h2 class="section-title text-center mb-5">Our Impact</h2>
+        <div class="row text-center">
+            <div class="col-md-3 mb-4">
+                <h3 class="display-4 fw-bold text-primary mb-2">99%</h3>
+                <p class="text-muted">Accuracy Rate</p>
+            </div>
+            <div class="col-md-3 mb-4">
+                <h3 class="display-4 fw-bold text-primary mb-2">1M+</h3>
+                <p class="text-muted">Documents Verified</p>
+            </div>
+            <div class="col-md-3 mb-4">
+                <h3 class="display-4 fw-bold text-primary mb-2">5K+</h3>
+                <p class="text-muted">Happy Clients</p>
+            </div>
+            <div class="col-md-3 mb-4">
+                <h3 class="display-4 fw-bold text-primary mb-2">24/7</h3>
+                <p class="text-muted">Support Available</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="text-center">
+        <h2 class="h3 mb-4">Ready to Get Started?</h2>
+        <p class="mb-4">Experience the power of AI-driven document verification today.</p>
+        <a href="{{ url_for('upload_document') }}" class="btn btn-primary btn-lg px-5">
+            <i class="fas fa-rocket me-2"></i>Try It Now
+        </a>
+    </div>
+</div>
+
+{% block extra_css %}
+<style>
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(78,84,200,0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+
+    .rounded-4 {
+        border-radius: 1rem;
+    }
+
+    .display-4 {
+        font-size: 2.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .display-4 {
+            font-size: 2rem;
+        }
+    }
+    
+    .tech-icon {
+        transition: all 0.3s ease;
+    }
+    
+    .tech-icon img {
+        transition: transform 0.3s ease;
+    }
+    
+    .card:hover .tech-icon img {
+        transform: scale(1.1);
+    }
+    
+    .card:hover .tech-icon {
+        filter: drop-shadow(0 10px 15px rgba(78,84,200,0.2));
+    }
+</style>
+{% endblock %}
 {% endblock %}

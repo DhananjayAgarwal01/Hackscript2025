@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">PAN Card Verification Result</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Status Badge -->
+                    <div class="text-center mb-4">
+                        {% set status_color = {
+                            'VERIFIED': 'success',
+                            'FAILED': 'danger',
+                            'SUSPICIOUS': 'warning',
+                            'INCOMPLETE': 'info'
+                        } %}
+                        <div class="h1 mb-3">
+                            <span class="badge bg-{{ status_color[verification.verification_status] }}">
+                                {{ verification.verification_status }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Details -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <label class="text-muted">PAN Number</label>
+                                <h5>{{ verification.pan_number }}</h5>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <label class="text-muted">Confidence Score</label>
+                                <div class="progress" style="height: 25px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ verification.confidence_score * 100 }}%">
+                                        {{ "%.1f"|format(verification.confidence_score * 100) }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if verification.extracted_name %}
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <label class="text-muted">Extracted Name</label>
+                                <h5>{{ verification.extracted_name }}</h5>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if verification.extracted_dob %}
+                        <div class="col-md-6">
+                            <div class="detail-item">
+                                <label class="text-muted">Date of Birth</label>
+                                <h5>{{ verification.extracted_dob }}</h5>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Verification Checks -->
+                    <div class="mt-4">
+                        <h5 class="mb-3">Verification Checks</h5>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Face Detection</span>
+                                    <span class="badge bg-{{ 'success' if verification.face_detected else 'danger' }}">
+                                        {{ 'DETECTED' if verification.face_detected else 'NOT DETECTED' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Signature Verification</span>
+                                    <span class="badge bg-{{ 'success' if verification.signature_detected else 'danger' }}">
+                                        {{ 'DETECTED' if verification.signature_detected else 'NOT DETECTED' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Manipulation Check</span>
+                                    <span class="badge bg-{{ 'success' if verification.manipulated_score < 0.3 else 'warning' if verification.manipulated_score < 0.7 else 'danger' }}">
+                                        {{ 'LOW' if verification.manipulated_score < 0.3 else 'MEDIUM' if verification.manipulated_score < 0.7 else 'HIGH' }} RISK
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('verify_pan_form') }}" class="btn btn-primary">
+                            Verify Another PAN
+                        </a>
+                        <a href="{{ url_for('pan_verification_history') }}" class="btn btn-outline-secondary ms-2">
+                            View History
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.detail-item {
+    margin-bottom: 1rem;
+}
+.detail-item label {
+    display: block;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+.progress {
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+}
+.card {
+    border: none;
+    border-radius: 0.5rem;
+}
+.card-header {
+    background-color: transparent;
+    border-bottom: 1px solid rgba(0,0,0,0.125);
+    padding: 1.5rem;
+}
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+</style>
+{% endblock %}

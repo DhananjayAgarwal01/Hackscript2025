@@ -13,9 +13,14 @@
             
             <div class="d-flex justify-content-between align-items-center">
                 <h2 class="mb-0">Document Analysis History</h2>
-                <a href="{{ url_for('upload_document') }}" class="btn btn-primary">
-                    <i class="fas fa-upload me-2"></i>New Analysis
-                </a>
+                <div>
+                    <button onclick="deleteAllDocuments()" class="btn btn-danger me-2">
+                        <i class="fas fa-trash-alt me-2"></i>Delete All
+                    </button>
+                    <a href="{{ url_for('upload_document') }}" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>New Analysis
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -38,7 +43,7 @@
                             </thead>
                             <tbody>
                                 {% for doc in documents %}
-                                <tr>
+                                <tr id="document-{{ doc.id }}">
                                     <td>
                                         <i class="fas fa-file me-2 text-primary"></i>
                                         {{ doc.document_type|replace('_', ' ')|title }}
@@ -71,6 +76,11 @@
                                            class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-search me-1"></i>View Details
                                         </a>
+                                        <button class="btn btn-sm btn-outline-danger delete-btn" 
+                                                data-document-id="{{ doc.id }}"
+                                                onclick="deleteDocument({{ doc.id }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                                 {% else %}
@@ -96,6 +106,184 @@
     </div>
 </div>
 
+{% block extra_js %}
+<script>
+function deleteDocument(documentId) {
+    if (!confirm('Are you sure you want to delete this document?')) {
+        return;
+    }
+
+    // Show loading state
+    const row = document.getElementById(`document-${documentId}`);
+    const deleteBtn = row.querySelector('.delete-btn');
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    fetch(`/delete_document/${documentId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrf_token')
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Animate row removal
+            row.style.backgroundColor = '#ffebee';
+            setTimeout(() => {
+                row.style.transition = 'all 0.5s';
+                row.style.opacity = '0';
+                row.style.height = '0';
+                setTimeout(() => row.remove(), 500);
+            }, 100);
+
+            showToast('Success', 'Document deleted successfully', 'success');
+
+            // If table is empty after deletion, show empty state
+            const tbody = row.parentElement;
+            if (tbody.children.length === 1) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-folder-open fa-3x mb-3"></i>
+                                <h5>No Documents Analyzed Yet</h5>
+                                <p class="mb-0">Upload a document to start analyzing</p>
+                                <a href="{{ url_for('upload_document') }}" class="btn btn-primary mt-3">
+                                    <i class="fas fa-upload me-2"></i>Upload Document
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        } else {
+            throw new Error(data.message || 'Failed to delete document');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+        showToast('Error', error.message || 'Failed to delete document', 'error');
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function showToast(title, message, type) {
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+    toast.setAttribute('aria-atomic', 'true');
+    toast.setAttribute('data-bs-delay', '3000'); // Auto-hide after 3 seconds
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <strong>${title}:</strong> ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => toast.remove());
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    document.body.appendChild(container);
+    return container;
+}
+
+function deleteAllDocuments() {
+    if (!confirm('Are you sure you want to delete ALL documents? This action cannot be undone!')) {
+        return;
+    }
+
+    const deleteAllBtn = document.querySelector('button[onclick="deleteAllDocuments()"]');
+    const originalContent = deleteAllBtn.innerHTML;
+    
+    // Show loading state
+    deleteAllBtn.disabled = true;
+    deleteAllBtn.innerHTML = `
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Deleting...
+    `;
+
+    fetch('/delete_all_documents', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Clear the table and show empty state
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="fas fa-folder-open fa-3x mb-3"></i>
+                            <h5>No Documents Analyzed Yet</h5>
+                            <p class="mb-0">Upload a document to start analyzing</p>
+                            <a href="{{ url_for('upload_document') }}" class="btn btn-primary mt-3">
+                                <i class="fas fa-upload me-2"></i>Upload Document
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            showToast('Success', 'All documents deleted successfully', 'success');
+        } else {
+            throw new Error(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error', error.message || 'Failed to delete all documents', 'error');
+    })
+    .finally(() => {
+        // Reset button state
+        deleteAllBtn.disabled = false;
+        deleteAllBtn.innerHTML = originalContent;
+    });
+}
+</script>
+{% endblock %}
+
 {% block extra_css %}
 <style>
     .progress {
@@ -113,6 +301,43 @@
     .btn-sm {
         padding: 0.25rem 0.7rem;
     }
+
+    .delete-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .delete-btn:hover {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .toast {
+        min-width: 300px;
+    }
+
+    .toast-container {
+        z-index: 1050;
+    }
+
+    .btn-danger {
+        transition: all 0.3s ease;
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+    }
+
+    .btn-danger:active {
+        transform: translateY(0);
+    }
+
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.15em;
+    }
 </style>
 {% endblock %}
-{% endblock %} 
+{% endblock %}

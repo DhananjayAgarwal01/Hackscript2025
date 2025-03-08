@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>PAN Verification History</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>PAN Number</th>
+                    <th>Status</th>
+                    <th>Confidence Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for verification in verifications %}
+                <tr>
+                    <td>{{ verification.upload_date.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ verification.pan_number }}</td>
+                    <td>
+                        <span class="badge {% if verification.verification_status == 'VERIFIED' %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ verification.verification_status }}
+                        </span>
+                    </td>
+                    <td>{{ "%.2f"|format(verification.confidence_score * 100) }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

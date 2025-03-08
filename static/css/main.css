@@ -1,10 +1,12 @@
 :root {
-    --primary-color: #2563eb;
-    --secondary-color: #3b82f6;
-    --accent-color: #60a5fa;
-    --dark-color: #1e3a8a;
-    --light-color: #eff6ff;
-    --background-color: #f8fafc;
+    --primary-color: #1a365d;    /* Darker navy blue */
+    --secondary-color: #2c5282;  /* Medium blue */
+    --accent-color: #3182ce;     /* Bright blue for accents */
+    --dark-color: #2d3748;       /* Dark slate */
+    --light-color: #f7fafc;      /* Light gray */
+    --background-color: #ffffff;  /* Clean white */
+    --text-color: #1a202c;       /* Dark text */
+    --border-color: #e2e8f0;     /* Light border */
 }
 
 body {
