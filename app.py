@@ -45,7 +45,7 @@ class Document(db.Model):
     hash_value = db.Column(db.String(64), nullable=False)
     forgery_score = db.Column(db.Float)
     analysis_result = db.Column(db.Text)
-    metadata = db.Column(db.Text)
+    document_metadata = db.Column(db.String(200))
 
 class AnalysisResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
