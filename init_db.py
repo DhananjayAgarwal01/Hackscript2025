@@ -1,6 +1,7 @@
-from app import app, db
+from app import db
 
-with app.app_context():
-    # Create all database tables
-    db.create_all()
-    print("Database tables created successfully!") 
+# Drop all tables and create new ones
+db.drop_all()
+db.create_all()
+
+print("Database initialized successfully!") 
