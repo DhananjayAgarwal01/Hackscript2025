@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Document Verification{% endblock %}
+
+{% block extra_css %}
+<style>
+    .verification-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .verification-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+    }
+
+    .icon-wrapper {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #4e54c8, #8f94fb);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .icon-wrapper i {
+        font-size: 2rem;
+        color: white;
+    }
+
+    .verification-card h3 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .verification-card p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+
+    .features-list li {
+        margin-bottom: 0.5rem;
+        color: #666;
+    }
+
+    .features-list li i {
+        color: #4e54c8;
+        margin-right: 0.5rem;
+    }
+
+    .verification-card .btn {
+        border-radius: 30px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        margin-top: auto;
+    }
+
+    .verification-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        flex: 1;
+        max-width: 250px;
+    }
+
+    .stat-item i {
+        font-size: 2rem;
+        color: #4e54c8;
+        margin-bottom: 1rem;
+    }
+
+    .stat-item h4 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-item p {
+        color: #666;
+        margin: 0;
+    }
+
+    @media (max-width: 992px) {
+        .verification-stats {
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            flex: 0 0 calc(50% - 1rem);
+            max-width: calc(50% - 1rem);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .stat-item {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-12 text-center mb-5">
+            <h2 class="display-4">Document Verification System</h2>
+            <p class="lead text-muted">Choose a document type to verify</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="verification-card" onclick="window.location.href='{{ url_for('verify_aadhaar_form') }}'">
+                <div class="icon-wrapper">
+                    <i class="fas fa-fingerprint"></i>
+                </div>
+                <h3>Aadhaar Card</h3>
+                <p>Verify Aadhaar card authenticity and details</p>
+                <ul class="features-list">
+                    <li><i class="fas fa-check"></i> QR Code Verification</li>
+                    <li><i class="fas fa-check"></i> Biometric Status</li>
+                    <li><i class="fas fa-check"></i> Security Features</li>
+                </ul>
+                <a href="{{ url_for('verify_aadhaar_form') }}" class="btn btn-primary">
+                    Verify Aadhaar Card
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="verification-card" onclick="window.location.href='{{ url_for('verify_cheque_form') }}'">
+                <div class="icon-wrapper">
+                    <i class="fas fa-money-check"></i>
+                </div>
+                <h3>Cheque</h3>
+                <p>Verify cheque authenticity and extract details</p>
+                <ul class="features-list">
+                    <li><i class="fas fa-check"></i> MICR Detection</li>
+                    <li><i class="fas fa-check"></i> Amount Validation</li>
+                    <li><i class="fas fa-check"></i> Signature Analysis</li>
+                </ul>
+                <a href="{{ url_for('verify_cheque_form') }}" class="btn btn-primary">
+                    Verify Cheque
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="verification-card" onclick="window.location.href='{{ url_for('verify_passport_form') }}'">
+                <div class="icon-wrapper">
+                    <i class="fas fa-passport"></i>
+                </div>
+                <h3>Passport</h3>
+                <p>Verify passport authenticity and detect tampering</p>
+                <ul class="features-list">
+                    <li><i class="fas fa-check"></i> Template Matching</li>
+                    <li><i class="fas fa-check"></i> Forgery Detection</li>
+                    <li><i class="fas fa-check"></i> Security Analysis</li>
+                </ul>
+                <a href="{{ url_for('verify_passport_form') }}" class="btn btn-primary">
+                    Verify Passport
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="verification-card" onclick="window.location.href='{{ url_for('verify_bank_statement_form') }}'">
+                <div class="icon-wrapper">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                </div>
+                <h3>Bank Statement</h3>
+                <p>Verify bank statement authenticity</p>
+                <ul class="features-list">
+                    <li><i class="fas fa-check"></i> Format Validation</li>
+                    <li><i class="fas fa-check"></i> Content Analysis</li>
+                    <li><i class="fas fa-check"></i> Tampering Check</li>
+                </ul>
+                <a href="{{ url_for('verify_bank_statement_form') }}" class="btn btn-primary">
+                    Verify Statement
+                </a>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="verification-card" onclick="window.location.href='{{ url_for('verify_pan_form') }}'">
+                <div class="icon-wrapper">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <h3>PAN Card</h3>
+                <p>Verify PAN card authenticity and details</p>
+                <ul class="features-list">
+                    <li><i class="fas fa-check"></i> Face Detection</li>
+                    <li><i class="fas fa-check"></i> Data Extraction</li>
+                    <li><i class="fas fa-check"></i> Forgery Check</li>
+                </ul>
+                <a href="{{ url_for('verify_pan_form') }}" class="btn btn-primary">
+                    Verify PAN Card
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12 text-center">
+            <div class="verification-stats">
+                <div class="stat-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <h4>Secure Verification</h4>
+                    <p>Advanced AI-powered document analysis</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-bolt"></i>
+                    <h4>Instant Results</h4>
+                    <p>Get verification results in seconds</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-history"></i>
+                    <h4>Verification History</h4>
+                    <p>Track all your verifications</p>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-chart-line"></i>
+                    <h4>Accuracy Metrics</h4>
+                    <p>Detailed confidence scores</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

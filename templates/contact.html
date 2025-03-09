@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contact-section {
+        background: linear-gradient(135deg, rgba(78,84,200,0.1), rgba(143,148,251,0.1));
+        border-radius: 20px;
+        padding: 3rem;
+        margin-bottom: 2rem;
+    }
+
+    .contact-info {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        height: 100%;
+    }
+
+    .contact-form {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .form-control {
+        border-radius: 10px;
+        padding: 0.8rem;
+        border: 1px solid #e1e1e1;
+    }
+
+    .form-control:focus {
+        box-shadow: 0 0 0 3px rgba(78,84,200,0.2);
+        border-color: var(--primary-color);
+    }
+
+    .contact-icon {
+        font-size: 2rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    .info-item {
+        margin-bottom: 1.5rem;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+        color: var(--text-color);
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(78,84,200,0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="contact-info">
+                <h3 class="mb-4">Contact Information</h3>
+                
+                <div class="info-item">
+                    <i class="fas fa-map-marker-alt contact-icon"></i>
+                    <div class="info-label">Address</div>
+                    <div class="info-value">123 Verification Street, Tech City, 12345</div>
+                </div>
+                
+                <div class="info-item">
+                    <i class="fas fa-phone contact-icon"></i>
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">+1 (234) 567-8900</div>
+                </div>
+                
+                <div class="info-item">
+                    <i class="fas fa-envelope contact-icon"></i>
+                    <div class="info-label">Email</div>
+                    <div class="info-value">support@docverify.com</div>
+                </div>
+                
+                <div class="info-item">
+                    <i class="fas fa-clock contact-icon"></i>
+                    <div class="info-label">Working Hours</div>
+                    <div class="info-value">Monday - Friday: 9:00 AM - 6:00 PM</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="contact-form">
+                <h3 class="mb-4">Send us a Message</h3>
+                
+                <form action="{{ url_for('contact') }}" method="POST">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Your Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="description" class="form-label">Message</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="5" required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-submit">
+                        <i class="fas fa-paper-plane me-2"></i>Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('phone').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 10) {
+        value = value.slice(0, 10);
+    }
+    e.target.value = value;
+});
+</script>
+{% endblock %} 

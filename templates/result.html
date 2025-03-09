@@ -7,7 +7,7 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('upload_document') }}">Upload</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('upload') }}">Upload</a></li>
                     <li class="breadcrumb-item active">Analysis Results</li>
                 </ol>
             </nav>
@@ -123,7 +123,7 @@
     <!-- Action Buttons -->
     <div class="row mt-4">
         <div class="col-12 text-center">
-            <a href="{{ url_for('upload_document') }}" class="btn btn-outline-primary me-2">
+            <a href="{{ url_for('upload') }}" class="btn btn-outline-primary me-2">
                 <i class="fas fa-upload me-2"></i>Analyze Another Document
             </a>
             <a href="{{ url_for('view_history') }}" class="btn btn-outline-secondary">

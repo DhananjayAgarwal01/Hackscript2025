@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Documents{% endblock %}
+
+{% block extra_css %}
+<style>
+    .verification-options {
+        padding: 4rem 0;
+        background: linear-gradient(135deg, rgba(78,84,200,0.05), rgba(143,148,251,0.05));
+    }
+
+    .option-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2.5rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .option-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .option-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    }
+
+    .option-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, rgba(78,84,200,0.1), rgba(143,148,251,0.1));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .option-icon i {
+        font-size: 2rem;
+        color: var(--primary-color);
+    }
+
+    .option-title {
+        font-size: 1.5rem;
+        color: var(--dark-color);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .option-description {
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+    }
+
+    .features-list {
+        text-align: left;
+        margin-bottom: 2rem;
+        padding-left: 0;
+        list-style: none;
+    }
+
+    .features-list li {
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .features-list li::before {
+        content: '✓';
+        color: var(--primary-color);
+        position: absolute;
+        left: 0;
+    }
+
+    .btn-verify {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-verify:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(78,84,200,0.4);
+        color: white;
+    }
+
+    .info-section {
+        padding: 4rem 0;
+        background: white;
+    }
+
+    .info-title {
+        font-size: 2rem;
+        color: var(--dark-color);
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, rgba(78,84,200,0.05), rgba(143,148,251,0.05));
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card h4 {
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+
+    .info-card p {
+        color: var(--text-color);
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Verification Options Section -->
+<section class="verification-options">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="option-card">
+                    <div class="option-icon">
+                        <i class="fas fa-id-card"></i>
+                    </div>
+                    <h3 class="option-title">PAN Card Verification</h3>
+                    <p class="option-description">
+                        Verify PAN cards with our advanced AI system for authenticity and accuracy.
+                    </p>
+                    <ul class="features-list">
+                        <li>Face Detection & Matching</li>
+                        <li>Signature Verification</li>
+                        <li>Hologram Detection</li>
+                        <li>Data Extraction & Validation</li>
+                        <li>Manipulation Check</li>
+                    </ul>
+                    <a href="{{ url_for('verify_pan_form') }}" class="btn-verify">
+                        Verify PAN Card
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="option-card">
+                    <div class="option-icon">
+                        <i class="fas fa-fingerprint"></i>
+                    </div>
+                    <h3 class="option-title">Aadhaar Card Verification</h3>
+                    <p class="option-description">
+                        Comprehensive Aadhaar verification with QR code scanning and security features.
+                    </p>
+                    <ul class="features-list">
+                        <li>QR Code Verification</li>
+                        <li>Biometric Status Check</li>
+                        <li>Address Validation</li>
+                        <li>Security Features Analysis</li>
+                        <li>Data Integrity Check</li>
+                    </ul>
+                    <a href="{{ url_for('verify_aadhaar_form') }}" class="btn-verify">
+                        Verify Aadhaar Card
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Information Section -->
+<section class="info-section">
+    <div class="container">
+        <h2 class="info-title">Why Choose Our Verification System?</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="info-card">
+                    <h4><i class="fas fa-shield-alt me-2"></i>Advanced Security</h4>
+                    <p>State-of-the-art encryption and security measures to protect your sensitive information.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-card">
+                    <h4><i class="fas fa-bolt me-2"></i>Real-time Processing</h4>
+                    <p>Get instant verification results with our powerful AI-driven processing engine.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="info-card">
+                    <h4><i class="fas fa-chart-line me-2"></i>Accuracy</h4>
+                    <p>High accuracy rates with comprehensive validation checks and security feature analysis.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

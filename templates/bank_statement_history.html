@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Bank Statement Verification History{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .history-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 1.5rem;
+    }
+
+    .history-body {
+        padding: 1.5rem;
+    }
+
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status-authentic {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-suspicious {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .status-forged {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        min-width: 150px;
+        color: var(--dark-color);
+    }
+
+    .detail-value {
+        flex-grow: 1;
+    }
+
+    .score-bar {
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 0.25rem;
+    }
+
+    .score-level {
+        height: 100%;
+        border-radius: 3px;
+    }
+
+    .score-level.real {
+        background: linear-gradient(to right, #28a745, #34ce57);
+    }
+
+    .score-level.fake {
+        background: linear-gradient(to right, #dc3545, #e4606d);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        margin: 2rem 0;
+    }
+
+    .verification-date {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.8);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Bank Statement Verification History</h2>
+
+            {% if verifications %}
+                {% for verification in verifications %}
+                    <div class="history-card">
+                        <div class="history-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Bank Statement Verification #{{ verification.id }}</h5>
+                                <span class="status-badge status-{{ verification.verification_status.lower() }}">
+                                    {{ verification.verification_status }}
+                                </span>
+                            </div>
+                            <div class="verification-date">
+                                {{ verification.upload_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </div>
+                        </div>
+                        <div class="history-body">
+                            <div class="detail-row">
+                                <div class="detail-label">Real Score</div>
+                                <div class="detail-value">
+                                    {% if verification.real_score is not none %}
+                                        {{ "%.1f"|format(verification.real_score * 100) }}%
+                                        <div class="score-bar">
+                                            <div class="score-level real" style="width: {{ verification.real_score * 100 }}%"></div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Not available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-label">Fake Score</div>
+                                <div class="detail-value">
+                                    {% if verification.fake_score is not none %}
+                                        {{ "%.1f"|format(verification.fake_score * 100) }}%
+                                        <div class="score-bar">
+                                            <div class="score-level fake" style="width: {{ verification.fake_score * 100 }}%"></div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Not available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if verification.processed_image %}
+                                <div class="mt-3">
+                                    <a href="{{ url_for('processed_file', filename=verification.processed_image) }}" 
+                                       class="btn btn-outline-primary btn-sm" target="_blank">
+                                        <i class="fas fa-image me-2"></i>View Processed Image
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <h4>No Verification History</h4>
+                    <p class="text-muted">You haven't verified any bank statements yet.</p>
+                    <a href="{{ url_for('verify_bank_statement_form') }}" class="btn btn-primary mt-3">
+                        Verify Bank Statement
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
+{% endblock %} 

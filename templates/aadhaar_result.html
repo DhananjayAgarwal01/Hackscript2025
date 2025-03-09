@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Aadhaar Verification Result{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    .result-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .status-badge {
+        font-size: 1.2rem;
+        padding: 0.5rem 1.5rem;
+        border-radius: 30px;
+        display: inline-block;
+        margin-top: 1rem;
+    }
+
+    .status-authentic {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-suspicious {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .status-forged {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .detail-row {
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+        display: flex;
+        align-items: center;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: var(--dark-color);
+        min-width: 200px;
+    }
+
+    .detail-value {
+        flex-grow: 1;
+    }
+
+    .confidence-bar {
+        height: 10px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+
+    .confidence-level {
+        height: 100%;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        border-radius: 5px;
+        transition: width 1s ease-in-out;
+    }
+
+    .missing-elements {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .action-buttons {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .action-buttons .btn {
+        margin: 0 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="result-card">
+        <div class="result-header">
+            <h2 class="mb-3">Aadhaar Verification Result</h2>
+            <div class="status-badge status-{{ verification.status.lower() }}">
+                {{ verification.status }}
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="detail-row">
+                <div class="detail-label">Verification Score</div>
+                <div class="detail-value">
+                    {{ "%.1f"|format(verification.confidence_score * 100) }}%
+                    <div class="confidence-bar">
+                        <div class="confidence-level" style="width: {{ verification.confidence_score * 100 }}%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="missing-elements">
+                <h4>Missing Elements</h4>
+                <ul class="list-unstyled mt-3">
+                    {% if not verification.name or verification.name == 'Not detected' %}
+                        <li class="text-danger mb-2"><i class="fas fa-times-circle"></i> Name not detected</li>
+                    {% endif %}
+                    {% if not verification.dob or verification.dob == 'Not detected' %}
+                        <li class="text-danger mb-2"><i class="fas fa-times-circle"></i> Date of Birth not detected</li>
+                    {% endif %}
+                    {% if not verification.gender or verification.gender == 'Not detected' %}
+                        <li class="text-danger mb-2"><i class="fas fa-times-circle"></i> Gender not detected</li>
+                    {% endif %}
+                    {% if not verification.address or verification.address == 'Not detected' %}
+                        <li class="text-danger mb-2"><i class="fas fa-times-circle"></i> Address not detected</li>
+                    {% endif %}
+                    {% if not verification.qr_verified %}
+                        <li class="text-danger mb-2"><i class="fas fa-times-circle"></i> QR Code verification failed</li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{ url_for('verify_aadhaar_form') }}" class="btn btn-primary">
+                    <i class="fas fa-redo"></i> Verify Another Aadhaar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
+{% endblock %} 

@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Aadhaar Verification History{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .history-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 1.5rem;
+    }
+
+    .history-body {
+        padding: 1.5rem;
+    }
+
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status-verified {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-failed {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .status-suspicious {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .status-incomplete {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        min-width: 150px;
+        color: var(--dark-color);
+    }
+
+    .detail-value {
+        flex-grow: 1;
+    }
+
+    .confidence-bar {
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 0.25rem;
+    }
+
+    .confidence-level {
+        height: 100%;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        border-radius: 3px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        margin: 2rem 0;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--primary-color);
+        margin-bottom: 1.5rem;
+    }
+
+    .verification-date {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.8);
+    }
+
+    .filter-section {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Aadhaar Verification History</h2>
+            
+            <div class="filter-section">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by Aadhaar number...">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="VERIFIED">Verified</option>
+                            <option value="FAILED">Failed</option>
+                            <option value="SUSPICIOUS">Suspicious</option>
+                            <option value="INCOMPLETE">Incomplete</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" id="dateFilter">
+                            <option value="">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {% if verifications %}
+                {% for verification in verifications %}
+                    <div class="history-card">
+                        <div class="history-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Aadhaar Verification #{{ verification.id }}</h5>
+                                <span class="status-badge status-{{ verification.status.lower() }}">
+                                    {{ verification.status }}
+                                </span>
+                            </div>
+                            <div class="verification-date">
+                                {{ verification.upload_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </div>
+                        </div>
+                        <div class="history-body">
+                            <div class="detail-row">
+                                <div class="detail-label">Aadhaar Number</div>
+                                <div class="detail-value">{{ verification.aadhaar_number[:4] + ' XXXX XXXX' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Name</div>
+                                <div class="detail-value">{{ verification.name or 'Not detected' }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Confidence Score</div>
+                                <div class="detail-value">
+                                    {% if verification.confidence_score is not none %}
+                                        {{ "%.1f"|format(verification.confidence_score * 100) }}%
+                                        <div class="confidence-bar">
+                                            <div class="confidence-level" style="width: {{ verification.confidence_score * 100 }}%"></div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Not available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">QR Verification</div>
+                                <div class="detail-value">
+                                    {% if verification.qr_verified %}
+                                        <span class="text-success">✓ Verified</span>
+                                    {% else %}
+                                        <span class="text-danger">✗ Not verified</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if verification.processed_image %}
+                                <div class="mt-3">
+                                    <a href="{{ url_for('processed_file', filename=verification.processed_image) }}" 
+                                       class="btn btn-outline-primary btn-sm" target="_blank">
+                                        <i class="fas fa-image me-2"></i>View Processed Image
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-history"></i>
+                    <h4>No Verification History</h4>
+                    <p class="text-muted">You haven't verified any Aadhaar cards yet.</p>
+                    <a href="{{ url_for('verify_aadhaar_form') }}" class="btn btn-primary mt-3">
+                        Verify Aadhaar Card
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const cards = document.querySelectorAll('.history-card');
+
+    function filterCards() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusTerm = statusFilter.value;
+        const dateTerm = dateFilter.value;
+
+        cards.forEach(card => {
+            const aadhaarNumber = card.querySelector('.detail-value').textContent.toLowerCase();
+            const status = card.querySelector('.status-badge').textContent.trim();
+            const date = new Date(card.querySelector('.verification-date').textContent);
+            
+            let showCard = true;
+
+            // Search filter
+            if (searchTerm && !aadhaarNumber.includes(searchTerm)) {
+                showCard = false;
+            }
+
+            // Status filter
+            if (statusTerm && status !== statusTerm) {
+                showCard = false;
+            }
+
+            // Date filter
+            if (dateTerm) {
+                const today = new Date();
+                const diffTime = Math.abs(today - date);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (dateTerm === 'today' && diffDays > 1) {
+                    showCard = false;
+                } else if (dateTerm === 'week' && diffDays > 7) {
+                    showCard = false;
+                } else if (dateTerm === 'month' && diffDays > 30) {
+                    showCard = false;
+                }
+            }
+
+            card.style.display = showCard ? 'block' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', filterCards);
+    statusFilter.addEventListener('change', filterCards);
+    dateFilter.addEventListener('change', filterCards);
+});
+</script>
+{% endblock %} 

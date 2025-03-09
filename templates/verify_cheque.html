@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Cheque{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-money-check me-2"></i>Cheque Verification
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('verify_cheque') }}" method="POST" enctype="multipart/form-data" id="chequeForm">
+                        <div class="upload-area mb-4" id="dropZone">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>Drop your cheque image here</h4>
+                            <p class="text-muted">or click to browse</p>
+                            <input type="file" name="cheque_file" id="chequeFile" class="file-input" accept="image/*" required>
+                        </div>
+
+                        <div class="progress mb-3" style="display: none;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"></div>
+                        </div>
+
+                        <div class="image-preview mb-4" style="display: none;">
+                            <img id="previewImage" src="#" alt="Preview" class="img-fluid rounded">
+                            <button type="button" class="btn btn-sm btn-danger remove-preview">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="guidelines mb-4">
+                            <h5><i class="fas fa-info-circle me-2"></i>Guidelines for Best Results</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success me-2"></i>Ensure the cheque is well-lit and clearly visible</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Capture all four corners of the cheque</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Make sure all text is readable</li>
+                                <li><i class="fas fa-check text-success me-2"></i>Avoid shadows and glare</li>
+                            </ul>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-shield-alt me-2"></i>Verify Cheque
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('cheque_verification_history') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-history me-2"></i>View Verification History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-area {
+        border: 2px dashed #4e54c8;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: white;
+        position: relative;
+    }
+
+    .upload-area:hover {
+        border-color: #8f94fb;
+        background: #f8f9fa;
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+        color: #4e54c8;
+        margin-bottom: 1rem;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .progress {
+        height: 0.5rem;
+        border-radius: 1rem;
+    }
+
+    .image-preview {
+        position: relative;
+        display: inline-block;
+        max-width: 100%;
+    }
+
+    .image-preview img {
+        max-height: 300px;
+        object-fit: contain;
+    }
+
+    .remove-preview {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .guidelines {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+
+    .guidelines li {
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-lg {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+
+    .drag-over {
+        border-color: #4e54c8;
+        background-color: rgba(78, 84, 200, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('chequeFile');
+    const previewContainer = document.querySelector('.image-preview');
+    const previewImage = document.getElementById('previewImage');
+    const removePreviewBtn = document.querySelector('.remove-preview');
+    const form = document.getElementById('chequeForm');
+
+    // Handle drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('drag-over');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('drag-over');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+        handleFiles(files);
+    }
+
+    // Handle file selection
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+    function handleFiles(files) {
+        if (files.length) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                    dropZone.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                alert('Please upload an image file');
+                fileInput.value = '';
+            }
+        }
+    }
+
+    // Remove preview
+    removePreviewBtn.addEventListener('click', () => {
+        previewContainer.style.display = 'none';
+        dropZone.style.display = 'block';
+        fileInput.value = '';
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        if (!fileInput.files.length) {
+            e.preventDefault();
+            alert('Please select a file to upload');
+        }
+    });
+});
+</script>
+{% endblock %} 

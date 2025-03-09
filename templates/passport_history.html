@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Passport Verification History{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .history-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 1.5rem;
+    }
+
+    .history-body {
+        padding: 1.5rem;
+    }
+
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+
+    .status-authentic {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .status-suspicious {
+        background-color: #ffc107;
+        color: black;
+    }
+
+    .status-forged {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        min-width: 150px;
+        color: var(--dark-color);
+    }
+
+    .detail-value {
+        flex-grow: 1;
+    }
+
+    .confidence-bar {
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 0.25rem;
+    }
+
+    .confidence-level {
+        height: 100%;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        border-radius: 3px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        margin: 2rem 0;
+    }
+
+    .verification-date {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.8);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Passport Verification History</h2>
+
+            {% if verifications %}
+                {% for verification in verifications %}
+                    <div class="history-card">
+                        <div class="history-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Passport Verification #{{ verification.id }}</h5>
+                                <span class="status-badge status-{{ verification.verification_status.lower() }}">
+                                    {{ verification.verification_status }}
+                                </span>
+                            </div>
+                            <div class="verification-date">
+                                {{ verification.upload_date.strftime('%B %d, %Y at %I:%M %p') }}
+                            </div>
+                        </div>
+                        <div class="history-body">
+                            <div class="detail-row">
+                                <div class="detail-label">Verification Score</div>
+                                <div class="detail-value">
+                                    {% if verification.confidence_score is not none %}
+                                        {{ "%.1f"|format(verification.confidence_score * 100) }}%
+                                        <div class="confidence-bar">
+                                            <div class="confidence-level" style="width: {{ verification.confidence_score * 100 }}%"></div>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Not available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-label">Manipulation Score</div>
+                                <div class="detail-value">
+                                    {% if verification.manipulated_score is not none %}
+                                        {{ "%.1f"|format(verification.manipulated_score * 100) }}%
+                                    {% else %}
+                                        <span class="text-muted">Not available</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if verification.processed_image %}
+                                <div class="mt-3">
+                                    <a href="{{ url_for('processed_file', filename=verification.processed_image) }}" 
+                                       class="btn btn-outline-primary btn-sm" target="_blank">
+                                        <i class="fas fa-image me-2"></i>View Processed Image
+                                    </a>
+                                </div>
+                            {% endif %}
+
+                            {% if verification.difference_image %}
+                                <div class="mt-2">
+                                    <a href="{{ url_for('processed_file', filename=verification.difference_image) }}" 
+                                       class="btn btn-outline-secondary btn-sm" target="_blank">
+                                        <i class="fas fa-image me-2"></i>View Difference Map
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-passport"></i>
+                    <h4>No Verification History</h4>
+                    <p class="text-muted">You haven't verified any passports yet.</p>
+                    <a href="{{ url_for('verify_passport_form') }}" class="btn btn-primary mt-3">
+                        Verify Passport
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://kit.fontawesome.com/your-font-awesome-kit.js"></script>
+{% endblock %} 

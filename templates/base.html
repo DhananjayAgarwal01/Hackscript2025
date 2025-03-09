@@ -3,179 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Document Forgery Detection System{% endblock %}</title>
+    <title>{% block title %}{% endblock %} - Document Verification System</title>
+    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
     <style>
         :root {
-            --primary-color: #1a365d;
-            --secondary-color: #2c5282;
-            --accent-color: #3182ce;
-            --dark-color: #2d3748;
-            --background-color: #ffffff;
-            --text-color: #1a202c;
+            --primary-color: #4e54c8;
+            --secondary-color: #8f94fb;
+            --dark-color: #2c3e50;
+            --text-color: #666;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, var(--background-color), #ffffff);
             color: var(--text-color);
-            min-height: 100vh;
+            background-color: #f8f9fa;
         }
 
         .navbar {
-            background: var(--primary-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 1rem;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem 0;
         }
 
         .navbar-brand {
-            color: white !important;
-            font-weight: bold;
-            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color) !important;
         }
 
         .nav-link {
-            color: rgba(255,255,255,0.9) !important;
+            color: var(--dark-color) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
             transition: all 0.3s ease;
-            margin: 0 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
         }
 
         .nav-link:hover {
-            color: white !important;
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
+            color: var(--primary-color) !important;
         }
 
-        /* Remove the underline effect */
-        .nav-link::after {
-            display: none;
-        }
-
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-            background: white;
-            overflow: hidden;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
+        .nav-link.active {
+            color: var(--primary-color) !important;
+            background: rgba(78,84,200,0.1);
+            border-radius: 20px;
         }
 
         .btn-primary {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 30px;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
             transition: all 0.3s ease;
         }
 
         .btn-primary:hover {
-            background: var(--secondary-color);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(78,84,200,0.4);
         }
 
-        .form-control {
-            border-radius: 10px;
-            padding: 0.8rem;
-            border: 1px solid #e1e1e1;
+        .footer {
+            background: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
 
-        .form-control:focus {
-            box-shadow: 0 0 0 3px rgba(78,84,200,0.2);
-            border-color: var(--primary-color);
+        .footer-heading {
+            color: var(--dark-color);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .footer-link {
+            color: var(--text-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-link:hover {
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .social-links a {
+            color: var(--dark-color);
+            margin-right: 1rem;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .social-links a:hover {
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
         }
 
         .alert {
             border-radius: 10px;
-            border: none;
-        }
-
-        .alert-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .alert-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        footer {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 2rem 0;
-            margin-top: auto;
-        }
-
-        @media (max-width: 768px) {
-            .navbar-brand {
-                font-size: 1.2rem;
-            }
-            
-            .card {
-                margin-bottom: 1rem;
-            }
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('home') }}">E-Raksha</a>
+            <a class="navbar-brand" href="{{ url_for('home') }}">
+                <i class="fas fa-shield-alt me-2"></i>DocVerify
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('home') }}">Home</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'home' }}" 
+                           href="{{ url_for('home') }}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('upload_document') }}">Upload</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'verify' }}" 
+                           href="{{ url_for('verify') }}">Verify Documents</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="historyDropdown" role="button" 
+                           data-bs-toggle="dropdown">History</a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('pan_verification_history') }}">
+                                    PAN Verifications
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('aadhaar_verification_history') }}">
+                                    Aadhaar Verifications
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('cheque_verification_history') }}">
+                                    Cheque Verifications
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('passport_verification_history') }}">
+                                    Passport Verifications
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ url_for('bank_statement_verification_history') }}">
+                                    Bank Statement Verifications
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('view_history') }}">History</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'about' }}" 
+                           href="{{ url_for('about') }}">About</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('about') }}">About</a>
+                        <a class="nav-link {{ 'active' if request.endpoint == 'contact' }}" 
+                           href="{{ url_for('contact') }}">Contact</a>
                     </li>
                 </ul>
+                <div class="d-flex">
+                    <a href="{{ url_for('verify') }}" class="btn btn-primary">
+                        <i class="fas fa-shield-alt me-2"></i>Verify Now
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container my-4">
+    <!-- Flash Messages -->
+    <div class="flash-messages">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        
-        {% block content %}{% endblock %}
     </div>
 
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Footer -->
     <footer class="footer">
-        <div class="container text-center">
-            <p>&copy; 2024 E-Raksha. All rights reserved.</p>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="footer-heading">About DocVerify</h5>
+                    <p>Secure document verification system using advanced AI and image processing technology.</p>
+                    <div class="social-links mt-3">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="footer-heading">Quick Links</h5>
+                    <a href="{{ url_for('verify_pan_form') }}" class="footer-link">PAN Verification</a>
+                    <a href="{{ url_for('verify_aadhaar_form') }}" class="footer-link">Aadhaar Verification</a>
+                    <a href="{{ url_for('pan_verification_history') }}" class="footer-link">PAN History</a>
+                    <a href="{{ url_for('aadhaar_verification_history') }}" class="footer-link">Aadhaar History</a>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="footer-heading">Contact Us</h5>
+                    <a href="{{ url_for('contact') }}" class="footer-link">Contact Form</a>
+                    <a href="mailto:support@docverify.com" class="footer-link">support@docverify.com</a>
+                    <a href="tel:+1234567890" class="footer-link">+1 (234) 567-8900</a>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p class="mb-0">&copy; 2024 DocVerify. All rights reserved.</p>
+            </div>
         </div>
     </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script>
+        // Auto-hide flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    alert.classList.remove('show');
+                    setTimeout(() => alert.remove(), 150);
+                }, 5000);
+            });
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

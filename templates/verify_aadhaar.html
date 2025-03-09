@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Aadhaar Card{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="text-center">Aadhaar Card Verification</h2>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('verify_aadhaar') }}" method="post" enctype="multipart/form-data" id="aadhaarForm">
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" name="aadhaar_file" id="aadhaarFile" accept=".jpg,.jpeg,.png" class="file-input" required>
+                    <div class="drag-text">
+                        <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                        <h3>Drag and Drop or Click to Upload</h3>
+                        <p>Upload your Aadhaar card image</p>
+                    </div>
+                    <div class="progress mt-3" style="display: none;">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div class="image-preview mt-3" style="display: none;">
+                    <img id="preview" src="" alt="Preview" class="img-fluid">
+                    <button type="button" class="btn btn-danger mt-2" id="removePreview">Remove</button>
+                </div>
+
+                <div class="guidelines mt-4">
+                    <h4>Guidelines for best results:</h4>
+                    <ul>
+                        <li>Ensure the Aadhaar card image is clear and well-lit</li>
+                        <li>All text should be clearly visible</li>
+                        <li>The entire card should be visible in the frame</li>
+                        <li>QR code should be clearly visible and not damaged</li>
+                        <li>Avoid glare or shadows on the card</li>
+                    </ul>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg" id="verifyButton">Verify Aadhaar Card</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-area {
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .upload-area:hover {
+        border-color: #007bff;
+        background: #f1f8ff;
+    }
+
+    .file-input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    .drag-text {
+        color: #666;
+        pointer-events: none;
+    }
+
+    .guidelines {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .guidelines ul {
+        padding-left: 20px;
+    }
+
+    .guidelines li {
+        margin-bottom: 10px;
+        color: #666;
+    }
+
+    .image-preview {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .image-preview img {
+        max-width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #verifyButton {
+        pointer-events: auto;
+        cursor: pointer;
+    }
+
+    #verifyButton:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('aadhaarFile');
+        const preview = document.getElementById('preview');
+        const previewContainer = document.querySelector('.image-preview');
+        const removePreviewBtn = document.getElementById('removePreview');
+        const form = document.getElementById('aadhaarForm');
+        const verifyButton = document.getElementById('verifyButton');
+
+        // Initially disable verify button
+        verifyButton.disabled = true;
+
+        uploadArea.addEventListener('click', function(e) {
+            if (e.target === uploadArea) {
+                fileInput.click();
+            }
+        });
+
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#007bff';
+            uploadArea.style.background = '#f1f8ff';
+        });
+
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            uploadArea.style.background = '#f8f9fa';
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            uploadArea.style.background = '#f8f9fa';
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                fileInput.files = e.dataTransfer.files;
+                showPreview(file);
+            }
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                showPreview(this.files[0]);
+            }
+        });
+
+        removePreviewBtn.addEventListener('click', function() {
+            fileInput.value = '';
+            previewContainer.style.display = 'none';
+            preview.src = '';
+            verifyButton.disabled = true;
+        });
+
+        function showPreview(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                previewContainer.style.display = 'block';
+                verifyButton.disabled = false;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        form.addEventListener('submit', function(e) {
+            if (!fileInput.files || !fileInput.files[0]) {
+                e.preventDefault();
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            // Disable the verify button and show loading state
+            verifyButton.disabled = true;
+            verifyButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying...';
+        });
+    });
+</script>
+{% endblock %} 

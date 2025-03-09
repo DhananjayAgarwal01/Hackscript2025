@@ -23,7 +23,21 @@
                             {{ verification.verification_status }}
                         </span>
                     </td>
-                    <td>{{ "%.2f"|format(verification.confidence_score * 100) }}%</td>
+                    <td>
+                        <div class="detail-row">
+                            <div class="detail-label">Confidence Score</div>
+                            <div class="detail-value">
+                                {% if verification.confidence_score is not none %}
+                                    {{ "%.1f"|format(verification.confidence_score * 100) }}%
+                                    <div class="confidence-bar">
+                                        <div class="confidence-level" style="width: {{ verification.confidence_score * 100 }}%"></div>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">Not available</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Cheque Verification Result{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="result-card">
+                <div class="result-header">
+                    <h4 class="m-0"><i class="fas fa-clipboard-check me-2"></i>Cheque Verification Results</h4>
+                </div>
+                <div class="result-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="score-circle mb-4">
+                                <div class="score-value">
+                                    {{ confidence_score|round }}%
+                                </div>
+                            </div>
+                            <div class="authenticity-badge {{ 'original' if status == 'Real Cheque' else 'tampered' }}">
+                                {{ status }}
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h5>Extracted Information</h5>
+                                <table class="table">
+                                    <tr>
+                                        <td><strong>Bank Name:</strong></td>
+                                        <td>{{ bank_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Cheque Number:</strong></td>
+                                        <td>{{ cheque_number }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Amount:</strong></td>
+                                        <td>{{ amount }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Payee Name:</strong></td>
+                                        <td>{{ payee_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Date:</strong></td>
+                                        <td>{{ date }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Manipulation Score:</strong></td>
+                                        <td>{{ manipulated_score|round }}%</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Processed Image</h5>
+                            <div class="image-preview">
+                                <img src="{{ url_for('processed_file', filename=processed_image) }}" 
+                                     alt="Processed Cheque" class="img-fluid">
+                            </div>
+                            <div class="mt-3">
+                                <p class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Green boxes indicate detected regions for text extraction
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('verify_cheque_form') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-redo me-2"></i>Verify Another Cheque
+                </a>
+                <a href="{{ url_for('cheque_verification_history') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-history me-2"></i>View History
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .result-header {
+        background: linear-gradient(135deg, #4e54c8, #8f94fb);
+        color: white;
+        padding: 1.5rem;
+    }
+
+    .result-body {
+        padding: 2rem;
+    }
+
+    .score-circle {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 10px solid #e9ecef;
+        position: relative;
+        margin: 0 auto;
+        background: white;
+    }
+
+    .score-value {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 2rem;
+        font-weight: bold;
+        color: #4e54c8;
+    }
+
+    .authenticity-badge {
+        padding: 1rem 2rem;
+        border-radius: 30px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        text-align: center;
+        margin: 1rem 0;
+    }
+
+    .authenticity-badge.original {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .authenticity-badge.tampered {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .image-preview {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .image-preview img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .table td {
+        padding: 0.75rem;
+        vertical-align: middle;
+    }
+
+    .table td:first-child {
+        width: 40%;
+        color: #666;
+    }
+
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %} 

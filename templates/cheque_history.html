@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Cheque Verification History{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-history me-2"></i>Cheque Verification History
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if verifications %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Bank Name</th>
+                                    <th>Cheque Number</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Confidence</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for verification in verifications %}
+                                <tr>
+                                    <td>{{ verification.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ verification.bank_name }}</td>
+                                    <td>{{ verification.cheque_number }}</td>
+                                    <td>{{ verification.amount }}</td>
+                                    <td>
+                                        <span class="badge {{ 'bg-success' if verification.verification_status == 'Real Cheque' else 'bg-danger' }}">
+                                            {{ verification.verification_status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ "%.2f"|format(verification.confidence_score * 100) }}%</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#detailsModal{{ verification.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Details Modal -->
+                                <div class="modal fade" id="detailsModal{{ verification.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Verification Details</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h6>Extracted Information</h6>
+                                                        <table class="table table-sm">
+                                                            <tr>
+                                                                <td><strong>Bank Name:</strong></td>
+                                                                <td>{{ verification.bank_name }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>Cheque Number:</strong></td>
+                                                                <td>{{ verification.cheque_number }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>Amount:</strong></td>
+                                                                <td>{{ verification.amount }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>Payee Name:</strong></td>
+                                                                <td>{{ verification.payee_name }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>Date:</strong></td>
+                                                                <td>{{ verification.date }}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><strong>Manipulation Score:</strong></td>
+                                                                <td>{{ "%.2f"|format(verification.manipulated_score * 100) }}%</td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h6>Processed Image</h6>
+                                                        <img src="{{ url_for('processed_file', filename=verification.processed_image) }}" 
+                                                             class="img-fluid rounded" alt="Processed Cheque">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5>No verification history found</h5>
+                        <p class="text-muted">Start by verifying a cheque document</p>
+                        <a href="{{ url_for('verify_cheque_form') }}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus me-2"></i>Verify New Cheque
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .badge {
+        padding: 0.5em 1em;
+        font-size: 0.875em;
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #4e54c8, #8f94fb);
+        color: white;
+    }
+
+    .modal-body h6 {
+        color: #4e54c8;
+        margin-bottom: 1rem;
+    }
+
+    .btn-info {
+        background-color: #4e54c8;
+        border-color: #4e54c8;
+        color: white;
+    }
+
+    .btn-info:hover {
+        background-color: #8f94fb;
+        border-color: #8f94fb;
+        color: white;
+    }
+</style>
+{% endblock %} 
